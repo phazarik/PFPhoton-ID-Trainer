@@ -211,7 +211,7 @@ model.add(Dense(1, activation='sigmoid'))
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 #Training the model :
-history = model.fit(X_train,y_train,epochs=100,batch_size=1024,validation_data=(X_test,y_test),verbose=0)
+history = model.fit(X_train,y_train,epochs=20,batch_size=1024,validation_data=(X_test,y_test),verbose=0)
 
 #Saving the output :
 print('The NN architecture is')

@@ -1,8 +1,13 @@
 #############################################################################
 #                         READING INTO THE CSV FILES                        #
-#   This program reads into the CSV files, labels single and backgound,     #
+#   This program reads into the CSV files, labels single and background,    #
 #   adds them into a single data frame, and produces a single CSV file      #
 #############################################################################
+# Note : The output data file can be split manually into training and
+# testing part using the following command :
+# sed -n 1,<line no. till half>p data.csv > train.csv
+# sed -n <line no. till half+1>,<lastline no.>p data.csv > test.csv
+
 
 import numpy as np
 import pandas as pd
