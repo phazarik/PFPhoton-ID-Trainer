@@ -3,7 +3,7 @@
 #                                                                           #
 # This code reads into CSV Files and file and trains the sequential NN      #
 # it should be run as follows :                                             #
-#     Training_PFID_alternative.py model_name.h5 output_name.pdf            #
+#                 Training_PFID_alternative.py model_name                   #
 # NOTE : Save the max and minvalues from the terminal output for step2      #
 #############################################################################
 
@@ -20,11 +20,16 @@ import warnings
 warnings.filterwarnings('ignore')
 import sys
 
+os.system("")
+
 modelname = sys.argv[1]
-outputname = sys.argv[2]
+#outputname = sys.argv[2]
+outputname = modelname
+
+os.system("mkdir -p output/" + modelname)
 
 from matplotlib.backends.backend_pdf import PdfPages
-pp = PdfPages(outputname)
+pp = PdfPages('output/' + modelname + '/'+modelname+'.pdf')
 
 print('Reading the input files')
 #Reading the data :
@@ -199,6 +204,23 @@ print(f'The number of input variables is {n_features}')
 #                The neural network :                  #
 ########################################################
 
+#ACTIVATE ONLY ONE MODEL AT A TIME :
+
+#model 1 :
+model = Sequential()
+model.add(Dense(n_features, activation='relu', kernel_initializer='he_normal', input_dim=n_features))
+model.add(Dense(1, activation='sigmoid'))
+
+'''
+#model2:
+model = Sequential()
+model.add(Dense(64, activation='relu', kernel_initializer='he_normal', input_dim=n_features))
+model.add(Dense(32, activation='relu', kernel_initializer='he_normal'))
+model.add(Dense(32, activation='relu', kernel_initializer='he_normal'))
+model.add(Dense(16, activation='relu', kernel_initializer='he_normal'))
+model.add(Dense(1, activation='sigmoid'))
+
+#model 3 :
 model = Sequential()
 model.add(Dense(128, activation='relu', kernel_initializer='he_normal', input_dim=n_features))
 model.add(Dense(64, activation='relu', kernel_initializer='he_normal'))
@@ -206,17 +228,19 @@ model.add(Dense(64, activation='relu', kernel_initializer='he_normal'))
 model.add(Dense(32, activation='relu', kernel_initializer='he_normal'))
 model.add(Dense(16, activation='relu', kernel_initializer='he_normal'))
 model.add(Dense(1, activation='sigmoid'))
+'''
 
 #Compiling the model :
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+#opt = tf.keras.optimizers.Adam(learning_rate=0.001)
 
 #Training the model :
-history = model.fit(X_train,y_train,epochs=20,batch_size=1024,validation_data=(X_test,y_test),verbose=0)
+history = model.fit(X_train,y_train,epochs=100,batch_size=1024,validation_data=(X_test,y_test),verbose=0)
 
 #Saving the output :
 print('The NN architecture is')
 model.summary()
-model.save(modelname)
+model.save('output/'+ modelname +f'/{modelname}.h5')
 
 print('\nTRAINING SUCESS!\n')
 
@@ -244,11 +268,11 @@ plt.ylabel('Loss')
 plt.yscale('log')
 plt.legend(loc='upper right')
 plt.title('Loss plot', fontsize=20)
-#plt.savefig('loss_v_epoch.png')
+plt.savefig('output/'+modelname+'/loss_v_epoch.png')
 plt.savefig(pp, format='pdf')
 
-plt.yscale('log')
-plt.title('Loss plot (log)', fontsize=20)
+#plt.yscale('log')
+#plt.title('Loss plot (log)', fontsize=20)
 plt.close()
 
 
@@ -303,11 +327,11 @@ testbkge = np.sqrt(testbkg[0])
 
 #NN-score plot
 plt.figure(figsize=(8,6))
-plt.errorbar(testsig[1][1:]-0.025, testsig[0], yerr=testsige, fmt='.', color="xkcd:green",label="Signal test", markersize='10')
-plt.errorbar(testbkg[1][1:]-0.025, testbkg[0], yerr=testbkge, fmt='.', color="xkcd:denim",label="Background test", markersize='10')
+plt.errorbar(testsig[1][1:]-0.01, testsig[0], yerr=testsige, fmt='.', color="xkcd:green",label="Signal test", markersize='10')
+plt.errorbar(testbkg[1][1:]-0.01, testbkg[0], yerr=testbkge, fmt='.', color="xkcd:denim",label="Background test", markersize='10')
 plt.hist(t_df[t_df['train_truth']==1]['train_prob'],bins=mybins, histtype='step', label="Signal train", linewidth=3, color='xkcd:greenish',density=False,log=False)
 plt.hist(t_df[t_df['train_truth']==0]['train_prob'],bins=mybins, histtype='step', label="Background train", linewidth=3, color='xkcd:sky blue',density=False,log=False)
-plt.legend(loc='upper center')
+plt.legend(loc='best')
 plt.xlabel('Score',fontsize=20)
 plt.ylabel('Events',fontsize=15)
 plt.title(f'NN Output',fontsize=20)
@@ -315,10 +339,10 @@ plt.title(f'NN Output',fontsize=20)
 #plt.title(f'NN Output (endcap photons)',fontsize=20) #endcap only
 plt.xticks([0.0,0.2,0.4,0.6,0.8,1.0],fontsize=12)
 plt.yticks(fontsize=12)
-plt.savefig(f'NNscore_{outputname}.png')
+plt.savefig(f'output/'+ modelname + f'/NNscore_{modelname}.png')
 plt.savefig(pp, format='pdf')
 plt.yscale("log")
-plt.savefig(f'NNscore_{outputname}_log.png')
+plt.savefig(f'output/'+ modelname + f'/NNscore_{modelname}_log.png')
 plt.savefig(pp, format='pdf')
 plt.close()
 
@@ -360,7 +384,7 @@ plt.xlabel('Signal Efficiency',fontsize=20)
 plt.ylabel('Background Rejection',fontsize=20)
 plt.xlim(0,100)
 plt.ylim(0,100)
-plt.savefig(f'ROC_{outputname}.png')
+plt.savefig(f'output/'+modelname+ f'/ROC_{modelname}.png')
 plt.savefig(pp, format='pdf')
 plt.close()
 
