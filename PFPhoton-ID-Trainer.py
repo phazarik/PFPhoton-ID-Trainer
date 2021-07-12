@@ -38,7 +38,11 @@ signal2 = pd.read_csv('../TrainingSamples/GJet_20toinf/df.csv.gzip',compression=
 #signal3 = pd.read_csv('../TrainingSamples/GJet_40toinf/df.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12])
 
 background1=pd.read_csv('../TrainingSamples/QCD/df.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12]) #nrows=1000 #add this, if you want to debug
-background2=pd.read_csv('../TrainingSamples/TauGun/df.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12])
+
+background2=pd.read_csv('../TrainingSamples/TauGun/df.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13])
+background2=background2[background2['isPionMother'] == 1] #reject the photons that comes from a pion
+background2 = background2.drop(['isPionMother'], axis=1)
+
 
 #print(signal1.head)
 
@@ -139,10 +143,11 @@ print(Sigdf.head)
 #########################
 
 print('\nReading into the Background File')
-Bkg_alldf = pd.concat([background1, background2])
 
 #### Adding conditions to the background file :
-Bkg_alldf = Bkg_alldf[Bkg_alldf['isPhotonMatching'] == 0] #keep the rows that contain fake photons
+background1 = background1[background1['isPhotonMatching'] ==0 ] #keep the rows that contain fake photons in the QCD sample
+#background2 = background2[background2['isPhotonMatching'] ==1 ] #keep the real photons from the taugun sample that comes from pions
+Bkg_alldf = pd.concat([background1])
 #Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) < 1.442] #barrel
 #Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) > 1.566] #endcap
 
@@ -206,12 +211,13 @@ print(f'The number of input variables is {n_features}')
 
 #ACTIVATE ONLY ONE MODEL AT A TIME :
 
+'''
 #model 1 :
 model = Sequential()
 model.add(Dense(n_features, activation='relu', kernel_initializer='he_normal', input_dim=n_features))
 model.add(Dense(1, activation='sigmoid'))
 
-'''
+
 #model2:
 model = Sequential()
 model.add(Dense(64, activation='relu', kernel_initializer='he_normal', input_dim=n_features))
@@ -219,6 +225,7 @@ model.add(Dense(32, activation='relu', kernel_initializer='he_normal'))
 model.add(Dense(32, activation='relu', kernel_initializer='he_normal'))
 model.add(Dense(16, activation='relu', kernel_initializer='he_normal'))
 model.add(Dense(1, activation='sigmoid'))
+'''
 
 #model 3 :
 model = Sequential()
@@ -228,14 +235,13 @@ model.add(Dense(64, activation='relu', kernel_initializer='he_normal'))
 model.add(Dense(32, activation='relu', kernel_initializer='he_normal'))
 model.add(Dense(16, activation='relu', kernel_initializer='he_normal'))
 model.add(Dense(1, activation='sigmoid'))
-'''
 
 #Compiling the model :
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 #opt = tf.keras.optimizers.Adam(learning_rate=0.001)
 
 #Training the model :
-history = model.fit(X_train,y_train,epochs=100,batch_size=1024,validation_data=(X_test,y_test),verbose=0)
+history = model.fit(X_train,y_train,epochs=50,batch_size=1024,validation_data=(X_test,y_test),verbose=0)
 
 #Saving the output :
 print('The NN architecture is')
