@@ -3,7 +3,7 @@
 #                                                                           #
 # This code reads into CSV Files and file and trains the sequential NN      #
 # it should be run as follows :                                             #
-#                 Training_PFID_alternative.py model_name                   #
+#                python PFPhoton-ID-Trainer.py <modelname>                  #
 # NOTE : Save the max and minvalues from the terminal output for step2      #
 #############################################################################
 
@@ -23,8 +23,6 @@ import sys
 os.system("")
 
 modelname = sys.argv[1]
-#outputname = sys.argv[2]
-outputname = modelname
 
 os.system("mkdir -p output/" + modelname)
 
@@ -32,24 +30,30 @@ from matplotlib.backends.backend_pdf import PdfPages
 pp = PdfPages('output/' + modelname + '/'+modelname+'.pdf')
 
 print('Reading the input files')
-#Reading the data :
-#signal1 = pd.read_csv('../TrainingSamples/GJet_20to40/df.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12]) #nrows=1000 #add this, if you want to debug
-signal2 = pd.read_csv('../TrainingSamples/GJet_20toinf/df.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12])
-#signal3 = pd.read_csv('../TrainingSamples/GJet_40toinf/df.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12])
 
-background1=pd.read_csv('../TrainingSamples/QCD/df.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12]) #nrows=1000 #add this, if you want to debug
+###################################################################################################################################################################
 
-background2=pd.read_csv('../TrainingSamples/TauGun/df.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13])
-background2=background2[background2['isPionMother'] == 1] #reject the photons that comes from a pion
-background2 = background2.drop(['isPionMother'], axis=1)
+#READING DATA FILES :
+#Columns: "phoPt", "phoEta", "phoPhi", "phoHoverE", "phohadTowOverEmValid", "photrkSumPtHollow", "photrkSumPtSolid", "phoecalRecHit", "phohcalTower", "phosigmaIetaIeta", "isPhotonMatching", "isPromptFinalState", "isPionMother", "isPFPhoton"
 
+file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14])
+print('new data :')
+print(file1.head)
+file1 = file1.drop(['isPionMother'], axis=1)
+print(file1.head)
 
-#print(signal1.head)
+file2 = pd.read_csv('../TrainingSamples/df_GJet_20toInf2.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14])
+file2 = file2.drop(['isPionMother'], axis=1)
 
-# I need to add the condition that, for signal, isPhotonMatching =1
-# and for background, isPhotonMatching = 0
-# additonal cuts can also be added here, for example, the PF-ID flags
+file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf.csv.gzip',compression='gzip', usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14])
+file3 = file3.drop(['isPionMother'], axis=1)
 
+#Do you want barrel or endcap?
+isBarrel = False
+
+##################################################################################################################################################################
+'''
+(We don't need to calculate PF flags anymore)
 ##########################################################
 #                    PF PHOTON FLAGS                     #
 #                                                        #
@@ -106,76 +110,90 @@ def flag5(phoEta, phosigmaIetaIeta) :
 #                                                        #
 #                                                        #    
 ##########################################################
+'''
+#####################################
+#  Defining the Signal dataframes   #
+#####################################
 
-########################
-#   Signal dataframe   #
-########################
+print('\nDefining the Signal File')
 
-print('\nReading into the Signal File')
-
-Sig_alldf = pd.concat([signal2])
-
-#### Adding cuts to the signal file :
-Sig_alldf = Sig_alldf[Sig_alldf['isPhotonMatching'] == 1]#keep the rows that contain gen-matching photons
-#Sig_alldf = Sig_alldf[abs(Sig_alldf['phoEta']) < 1.442] #barrel
-#Sig_alldf = Sig_alldf[abs(Sig_alldf['phoEta']) > 1.566] #endcap
-
-#print('Variables in the data file :')
-#print(list(Sig_alldf.columns))
-        
-# Adding the isPFPhoton flags as the last column in the signal dataframe.
-# If all of they above condition are true, only then their product is true,
-# which means the photon is a  PF-photon
-print('Adding the PF flags to the signal file')
-Sig_alldf['isPFphoton'] = Sig_alldf.apply(lambda row: flag1(row.phoPt)*flag2(row.phoHoverE)*flag3(row.photrkSumPtHollow, row.phoecalRecHit, row.phohcalTower)*flag4(row.phohadTowOverEmValid, row.photrkSumPtSolid, row.phoPt)*flag5(row.phoEta, row.phosigmaIetaIeta), axis=1)
-#print(Sig_alldf.head)
-print('PF Flags are added succesfully!\nNow dropping the unnecessary columns.')
-#removing the unnecessary columns :
-Sigdf = Sig_alldf.drop(['phoPt','phoEta','phoPhi','isPhotonMatching','isPromptFinalState','phohadTowOverEmValid'], axis=1)
-print('Unnecessary columns dropped from the signal File.\nThe dataframe has the following structure :')
-print(Sigdf.shape)
-print(list(Sigdf.columns))
-print(Sigdf.head)
+signal1 = file1[file1['isPhotonMatching'] ==1 ]
+signal2 = file2[file2['isPhotonMatching'] ==1 ]
+signal3 = file3[file3['isPhotonMatching'] ==1 ]
 
 
-#########################
-# Background data-frame #
-#########################
+#######################################
+# Defining the Background data-frames #
+#######################################
 
-print('\nReading into the Background File')
+print('\nDefining the Background File')
 
 #### Adding conditions to the background file :
-background1 = background1[background1['isPhotonMatching'] ==0 ] #keep the rows that contain fake photons in the QCD sample
-#background2 = background2[background2['isPhotonMatching'] ==1 ] #keep the real photons from the taugun sample that comes from pions
-Bkg_alldf = pd.concat([background1])
-#Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) < 1.442] #barrel
-#Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) > 1.566] #endcap
+background1 = file1[file1['isPhotonMatching'] ==0 ] 
+background2 = file2[file2['isPhotonMatching'] ==0 ]
+background3 = file3[file3['isPhotonMatching'] ==0 ] 
 
-#Adding PF-flags
-print('Adding the PF flags to the background file')
-Bkg_alldf['isPFphoton'] = Bkg_alldf.apply(lambda row: flag1(row.phoPt)*flag2(row.phoHoverE)*flag3(row.photrkSumPtHollow, row.phoecalRecHit, row.phohcalTower)*flag4(row.phohadTowOverEmValid, row.photrkSumPtSolid, row.phoPt)*flag5(row.phoEta, row.phosigmaIetaIeta), axis=1)
-#print(Bkg_alldf.head)
-print('PF Flags are added succesfully!\nNow dropping the unnecessary columns.')
+
+##################################################################
+#Adding labels and sample column to distinguish varius samples
+
+signal1["sample"]=0
+signal2["sample"]=1
+signal3["sample"]=2
+background1["sample"]=0
+background2["sample"]=1
+background3["sample"]=2
+
+signal1["label"]=1
+signal2["label"]=1
+signal3["label"]=1
+background1["label"]=0
+background2["label"]=0
+background3["label"]=0
+
+################################################################
+#Concatinating everything, and putting extra cuts:
+
+Sig_alldf = pd.concat([signal1, signal2, signal3])
+
+if isBarrel == True :
+    Sig_alldf = Sig_alldf[abs(Sig_alldf['phoEta']) < 1.442] #barrel only
+else:
+    Sig_alldf = Sig_alldf[abs(Sig_alldf['phoEta']) > 1.566] #endcap only
+
+print('\nSignal Photons :')
+print(Sig_alldf.shape)
+
+Bkg_alldf = pd.concat([background1, background2, background3])
+if isBarrel == True :
+    Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) < 1.442] #barrel only
+else :
+    Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) > 1.566] #endcap only
+
+print('\nBackground Photons :')
+print(Bkg_alldf.shape)
+
+#########################################################
 #removing the unnecessary columns :
-Bkgdf = Bkg_alldf.drop(['phoPt','phoEta','phoPhi','isPhotonMatching','isPromptFinalState','phohadTowOverEmValid'], axis=1)
-print('Unnecessary columns dropped from the background File.\nThe dataframe has the following structure :')
-print(Bkgdf.shape)
-print(Bkgdf.head)
-print('\nData reading succesful !\nBEGINNING THE TRAINING PROCESS\n')
 
+print("Removing Unnecessary Columsn from Signal and Background Dataframes")
+Sigdf = Sig_alldf.drop(['phoPt','phoEta','phoPhi','isPhotonMatching','isPromptFinalState','phohadTowOverEmValid'], axis=1)
+Bkgdf = Bkg_alldf.drop(['phoPt','phoEta','phoPhi','isPhotonMatching','isPromptFinalState','phohadTowOverEmValid'], axis=1)
+print('\nData reading succesful !\nBEGINNING THE TRAINING PROCESS\n')
 
 ##########################################################
 
-#Final data frame creaton :
-Sigdf["label"]=1           #This creates an additional column "label"
-Bkgdf["label"]=0
-    
+#Final data frame creaton :    
 data = pd.concat([Sigdf,Bkgdf])
 print('dataframes are succesfully created.')
+print('\nTotal Photons :')
+print(data.shape)
+print(data.head)
 
 #Splitting the label column as y and input variables as X
-X, y = data.values[:,:-1], data.values[:,-1]
-print(f'Shapes of data, X, y are {data.shape}, {X.shape} , {y.shape}')
+X= data.values[:,:-3] #Takes all the variables except sample and label columns and isPFPhoton
+y= data.values[:,-1] #Takes only the label column (1=signal, 0=background)
+print(f'Shapes of X, y are {X.shape} , {y.shape}')
 
 
 ########################################################
@@ -193,16 +211,21 @@ MaxMinusMin = X.max(axis=0) - X.min(axis=0)            #
 normedX = 2*((X-X.min(axis=0))/(MaxMinusMin)) -1.0     #
 X = normedX                                            #
 ########################################################
+
+print("The main data has been normalised.")
+
 # This normalisation procedure is not useful when you have variables containing
 # all zeros or all values close to zero. We have to be careful with this. 
 # Currently, the variable 'phohadTowOverEmValid' has been removed because of this.
 
 #Splitting the data into a training and a testing part :
+
 X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.5)
 print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-n_features = X_train.shape[1]
-print(f'The number of input variables is {n_features}')
 
+
+n_features = X_train.shape[1]
+print(f'The number of input variables is {n_features}\nThe training has begun.')
 
 
 ########################################################
@@ -249,6 +272,8 @@ model.summary()
 model.save('output/'+ modelname +f'/{modelname}.h5')
 
 print('\nTRAINING SUCESS!\n')
+print('Plotting has begun.')
+
 
 ###########################################################
 #Fancy plotting to see how the training performed :
@@ -320,7 +345,7 @@ auc_score = auc(tpr,1-fpr)
 fpr1, tpr1, _ = roc_curve(y_train,train_pred_proba)
 auc_score1 = auc(tpr1,1-fpr1)
 
-
+##############################################################################
 # Now we plot the NN output
 #mybins = np.arange(0,1.05,0.05)
 mybins = np.arange(0, 1.02, 0.02)
@@ -340,9 +365,12 @@ plt.hist(t_df[t_df['train_truth']==0]['train_prob'],bins=mybins, histtype='step'
 plt.legend(loc='best')
 plt.xlabel('Score',fontsize=20)
 plt.ylabel('Events',fontsize=15)
-plt.title(f'NN Output',fontsize=20)
-#plt.title(f'NN Output (barrel photons)',fontsize=20) #barrel only
-#plt.title(f'NN Output (endcap photons)',fontsize=20) #endcap only
+
+if isBarrel == True :
+    plt.title(f'NN Output (barrel photons)',fontsize=20) #barrel only
+else :
+    plt.title(f'NN Output (endcap photons)',fontsize=20) #endcap only
+
 plt.xticks([0.0,0.2,0.4,0.6,0.8,1.0],fontsize=12)
 plt.yticks(fontsize=12)
 plt.savefig(f'output/'+ modelname + f'/NNscore_{modelname}.png')
@@ -352,6 +380,7 @@ plt.savefig(f'output/'+ modelname + f'/NNscore_{modelname}_log.png')
 plt.savefig(pp, format='pdf')
 plt.close()
 
+###############################################################################
 #ROC plot
 tpr=tpr*100
 fnr=(1-fpr)*100
@@ -360,16 +389,11 @@ fnr1=(1-fpr1)*100
 plt.figure(figsize=(8,8))
 plt.plot(tpr,fnr,color='xkcd:denim blue', label='Training ROC (AUC = %0.4f)' % auc_score1)
 plt.plot(tpr1,fnr1,color='xkcd:sky blue', label='Testing ROC (AUC = %0.4f)' % auc_score)
-'''
-backgroundpass=data.loc[(data['isPFphoton'] == 1) & (data['label'] == 0)].sum()
-backgroundrej=data.loc[(data['isPFphoton'] == 0) & (data['label'] == 0)].sum()
-signalpass=data.loc[(data['isPFphoton'] == 1) & (data['label'] == 1)].sum()
-signalrej=data.loc[(data['isPFphoton'] == 0) & (data['label'] == 1)].sum()
-'''
-backgroundpass=len(data.query('(isPFphoton == 1) & (label == 0)'))
-backgroundrej =len(data.query('(isPFphoton == 0) & (label == 0)'))
-signalpass    =len(data.query('(isPFphoton == 1) & (label == 1)'))
-signalrej     =len(data.query('(isPFphoton == 0) & (label == 1)'))
+
+backgroundpass=len(data.query('(isPFPhoton == 1) & (label == 0)'))
+backgroundrej =len(data.query('(isPFPhoton == 0) & (label == 0)'))
+signalpass    =len(data.query('(isPFPhoton == 1) & (label == 1)'))
+signalrej     =len(data.query('(isPFPhoton == 0) & (label == 1)'))
 print(f'\nPhoton pass/fail info :')
 print(f'No of background photons passed = {backgroundpass}')
 print(f'No of background photons failed = {backgroundrej}')
@@ -383,17 +407,24 @@ print(f'signal efficiency (True Positive Rate) = {signaleff}')
 plt.plot([signaleff], [backgroundrej], marker='o', color="red", markersize=6, label='CMSSW flag')
 
 plt.legend(loc='lower right')
-plt.title(f'ROC Curve',fontsize=20)
-#plt.title(f'ROC Curve (barrel photons)',fontsize=20) #barrel photons
-#plt.title(f'ROC Curve (endcap photons)',fontsize=20) #endcap photons
+#plt.title(f'ROC Curve',fontsize=20)
+
+if isBarrel == True :
+    plt.title(f'ROC Curve (barrel photons)',fontsize=20) #barrel photons
+else :
+    plt.title(f'ROC Curve (endcap photons)',fontsize=20) #endcap photons
+
 plt.xlabel('Signal Efficiency',fontsize=20)
 plt.ylabel('Background Rejection',fontsize=20)
 plt.xlim(0,100)
 plt.ylim(0,100)
 plt.savefig(f'output/'+modelname+ f'/ROC_{modelname}.png')
 plt.savefig(pp, format='pdf')
-plt.close()
 
+
+plt.close()
 
 pp.close()
 print(f'\nAll done. Model is saved as {modelname}\n')
+
+
