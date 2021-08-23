@@ -4,7 +4,7 @@
 # This code reads into CSV Files and file and trains the sequential NN      #
 # it should be run as follows :                                             #
 #                python PFPhoton-ID-Trainer.py <modelname>                  #
-# NOTE : Save the max and minvalues from the terminal output for step2      #
+#                                                                           #
 #############################################################################
 
 import numpy as np
@@ -21,81 +21,47 @@ warnings.filterwarnings('ignore')
 import sys
 
 os.system("")
-
 modelname = sys.argv[1]
-
-os.system("mkdir -p output/" + modelname)
-
+os.system("mkdir -p output/" + modelname + "/extra_plots")
 from matplotlib.backends.backend_pdf import PdfPages
 pp = PdfPages('output/' + modelname + '/'+modelname+'.pdf')
-
 #I added a text file which contains some information regarding the training process.
 txt = open(f'output/' + modelname+ f'/max-min_{modelname}.txt', "w+")
-
-print('Reading the input files')
 
 #Do you want barrel or endcap?
 isBarrel = False #True -> Barrel, False -> Endcap
 #Do you want to debug?
 isDebug = False #True -> nrows=1000
 
-############################################################
-# Normalisation of input variables to go from -1 to 1      #
-# using  normedX = 2(X - min)/(max - min) - 1.0            #
-#def normalise(X) :    #works on values
-#    maxValues = X.max(axis=0) #column
-#    minValues = X.min(axis=0)
-#    print("\n### SAVE THE FOLLOWING VALUES ###")
-#    print("Max values")
-#    print(maxValues)
-#    print("Min values")
-#    print(minValues)
-#    print('#################################\n')
-#    MaxMinusMin = X.max(axis=0) - X.min(axis=0)
-#    normedX = 2*((X-X.min(axis=0))/(MaxMinusMin)) -1.0
-#    return normedX
-
 ###################################################################################################################################################################
 
 #READING DATA FILES :
-#Columns: "phoPt", "phoEta", "phoPhi", "phoHoverE", "phohadTowOverEmValid", "photrkSumPtHollow", "photrkSumPtSolid", "phoecalRecHit", "phohcalTower", "phosigmaIetaIeta", 'phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5','phoEcalPFClusterIso','phoHcalPFClusterIso','phohasPixelSeed','phoR9Full5x5', "isPhotonMatching", "isPionMother", "isPFPhoton" (+ "sample" , "label" added later)
+print('Reading the input files')
+#Columns: phoPt, phoEta, phoPhi, phoHoverE, phohadTowOverEmValid, photrkSumPtHollow, photrkSumPtSolid, phoecalRecHit, phohcalTower, phosigmaIetaIeta, phoSigmaIEtaIEtaFull5x5, phoSigmaIEtaIPhiFull5x5, phoEcalPFClusterIso, phoHcalPFClusterIso, phohasPixelSeed, phoR9Full5x5, isPhotonMatching, isPionMother, isPromptFinalState, isHardProcess, isPFPhoton (+ "sample" , "label" added later)
 
-mycols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+mycols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
 if isDebug == True : #take only the first 1000 photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    #file1 = file1.drop(['isPionMother'], axis=1)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet_20toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file2 = file2.drop(['isPionMother'], axis=1)
+    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    #file3 = file3.drop(['isPionMother'], axis=1)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file4 = file4.drop(['isPionMother'], axis=1)
+    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
     #file5 = pd.read_csv('../TrainingSamples/df_TauGun_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    #file5 = file5[file5['isPionMother'] == 1] # photons which are coming for a pion (part of the background)
-    #file5 = file5.drop(['isPionMother'], axis=1)
 else : #take all the photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols)
-    #file1 = file1.drop(['isPionMother'], axis=1)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet_20toInf_20.csv.gzip',compression='gzip', usecols=mycols)
-    file2 = file2.drop(['isPionMother'], axis=1)
+    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols)
-    #file3 = file3.drop(['isPionMother'], axis=1)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD_20.csv.gzip',compression='gzip', usecols=mycols)
-    file4 = file4.drop(['isPionMother'], axis=1)
+    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols)
     #file5 = pd.read_csv('../TrainingSamples/df_TauGun_20.csv.gzip',compression='gzip', usecols=mycols)
-    #file5 = file5[file5['isPionMother'] == 1] # photons which are coming for a pion (part of the background)
-    #file5 = file5.drop(['isPionMother'], axis=1)
-
+    
 ##################################################################################################################################################################
 #  Defining the Signal dataframes   #
 #####################################
 
 print('\nDefining the Signal File')
 
-#signal1 = file1[file1['isPhotonMatching'] ==1 ]
-signal2 = file2[file2['isPhotonMatching'] ==1 ]
-#signal3 = file3[file3['isPhotonMatching'] ==1 ]
-
+#signal1 = file1[(file1['isPhotonMatching'] == 1) and (file1['isPromptFinalState'] == 1) ]
+signal2 = file2[(file2['isPhotonMatching'] == 1) & (file2['isPromptFinalState'] == 1) ]
+#signal3 = file3[(file3['isPhotonMatching'] == 1) and (file3['isPromptFinalState'] == 1)]
 
 #######################################
 # Defining the Background data-frames #
@@ -104,11 +70,10 @@ signal2 = file2[file2['isPhotonMatching'] ==1 ]
 print('\nDefining the Background File')
 
 #### Adding conditions to the background file :
-#background1 = file1[file1['isPhotonMatching'] ==0 ] 
-background2 = file2[file2['isPhotonMatching'] ==0 ]
-#background3 = file3[file3['isPhotonMatching'] ==0 ]
-background4 = file4[file4['isPhotonMatching'] ==0 ]
-
+#background1 = file1[file1['isPhotonMatching'] == 0 ] 
+#background2 = file2[file2['isPhotonMatching'] == 0 ]
+#background3 = file3[file3['isPhotonMatching'] == 0 ]
+background4 = file4[(file4['isPhotonMatching'] == 0) | ((file4['isPhotonMatching'] == 1) & (file4['isPromptFinalState'] == 0)) ]
 
 ##################################################################
 #Adding labels and sample column to distinguish varius samples
@@ -117,7 +82,7 @@ background4 = file4[file4['isPhotonMatching'] ==0 ]
 signal2["sample"]=1
 #signal3["sample"]=2
 #background1["sample"]=0
-background2["sample"]=1
+#background2["sample"]=1
 #background3["sample"]=2
 background4["sample"]=3
 
@@ -125,7 +90,7 @@ background4["sample"]=3
 signal2["label"]=1
 #signal3["label"]=1
 #background1["label"]=0
-background2["label"]=0
+#background2["label"]=0
 #background3["label"]=0
 background4["label"]=0
 
@@ -146,7 +111,7 @@ else:
 print('\nSignal Photons :')
 print(Sig_alldf.shape)
 
-Bkg_alldf = pd.concat([background2, background4])
+Bkg_alldf = pd.concat([background4])
 if isBarrel == True :
     Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) < 1.442] #barrel only
 else :
@@ -155,12 +120,9 @@ else :
 print('\nBackground Photons :')
 print(Bkg_alldf.shape)
 
-#########################################################
-#removing the unnecessary columns :
-
 print("Removing Unnecessary Columns from Signal and Background Dataframes")
-Sigdf = Sig_alldf.drop(['phoPt','phoEta','phoPhi','isPhotonMatching','phohadTowOverEmValid', 'photrkSumPtSolid'], axis=1)
-Bkgdf = Bkg_alldf.drop(['phoPt','phoEta','phoPhi','isPhotonMatching','phohadTowOverEmValid', 'photrkSumPtSolid'], axis=1)
+Sigdf = Sig_alldf.drop(['phoPhi','isPhotonMatching','phohadTowOverEmValid', 'photrkSumPtSolid', 'isPionMother'], axis=1)
+Bkgdf = Bkg_alldf.drop(['phoPhi','isPhotonMatching','phohadTowOverEmValid', 'photrkSumPtSolid', 'isPionMother'], axis=1)
 print('\nData reading succesful !\nBEGINNING THE TRAINING PROCESS\n')
 
 ##########################################################
@@ -174,7 +136,7 @@ print(data.shape)
 print(data.head)
 
 #data["weight"]=1
-
+#Splitting:
 data_train, data_test = train_test_split(data, test_size=0.5, stratify=data["label"])
 
 n_signal_train = len(data_train.query('label == 1'))
@@ -212,8 +174,8 @@ X_test= data_test[['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIe
 y_test= data_test["label"].values #Takes only the label column (1=signal, 0=background)
 #w_test= data_test["weight"].values
 
-print(data_train.columns)
-print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+#print(data_train.columns)
+#print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
 ########################################################################
 # NORMALISATION :
@@ -230,7 +192,6 @@ MaxMinusMin = maxValues - minValues
 normedX_train = 2*((X_train - minValues)/(MaxMinusMin)) -1.0
 X_train = normedX_train
 #Normalising X_test using the same Max and Min values as before:
-
 normedX_test = 2*((X_test - minValues)/(MaxMinusMin)) -1.0
 X_test = normedX_test
 print("The train and test  data has been normalised.")
@@ -239,12 +200,12 @@ print("The train and test  data has been normalised.")
 #We need these max and min values for testing later. We can keep them in a text file.
 
 txt.write(f'\nNormalisation Parameters :\n')
-txt.write(f'\nMax_values:\n')
+txt.write(f'\nmaxValues =\n')
 txt.write('[')
 for entries in maxValues :
     txt.write(str(entries)+', ')
 txt.write(']')
-txt.write(f'\nMin-values:\n')
+txt.write(f'\nminValues =\n')
 txt.write('[')
 for entries in minValues :
     txt.write(str(entries)+', ')
@@ -254,7 +215,7 @@ txt.write(']')
 
 
 n_features = X_train.shape[1]
-print(f'The number of input variables is {n_features}\nThe training has begun.')
+print(f'\nNormalisation done.\nThe number of input variables is {n_features}\nThe training has begun.')
 
 
 ########################################################
@@ -263,12 +224,10 @@ print(f'The number of input variables is {n_features}\nThe training has begun.')
 
 #ACTIVATE ONLY ONE MODEL AT A TIME :
 
-
 #model 1 :
 #model = Sequential()
 #model.add(Dense(n_features, activation='relu', kernel_initializer='he_normal', input_dim=n_features))
 #model.add(Dense(1, activation='sigmoid'))
-
 
 #model2:
 #model = Sequential()
@@ -277,7 +236,6 @@ print(f'The number of input variables is {n_features}\nThe training has begun.')
 #model.add(Dense(32, activation='relu', kernel_initializer='he_normal'))
 #model.add(Dense(16, activation='relu', kernel_initializer='he_normal'))
 #model.add(Dense(1, activation='sigmoid'))
-
 
 #model 3 :
 model = Sequential()
@@ -337,8 +295,6 @@ plt.savefig(pp, format='pdf')
 plt.close()
 
 
-
-
 ############################################################
 #             Plotting the neural network score :          #
 ############################################################
@@ -374,6 +330,12 @@ auc_score = auc(tpr,1-fpr)
 # Now the ROC curve for training data
 fpr1, tpr1, _ = roc_curve(y_train,train_pred_proba)
 auc_score1 = auc(tpr1,1-fpr1)
+print('\nTest:')
+print(f'shape of fpr = {fpr.shape}')
+print(f'shape of tpr = {tpr.shape}')
+print(f'shape of auc = {auc_score.shape}\n')
+print(f'Shape of data_train and data_test = {data_train.shape} and {data_test.shape}')
+print(f'Shape of the whole dataframe = {data.shape}')
 
 ##############################################################################
 # Now we plot the NN output
@@ -386,6 +348,16 @@ testsige = np.sqrt(testsig[0])
 testbkg = plt.hist(v_df[v_df['test_truth']==0]['test_prob'],bins=mybins, density=False)
 testbkge = np.sqrt(testbkg[0])
 
+#################################################################################################
+#We store the NNScore in a new column :                                                         #
+print('\nAdding the NN score to the test dataframe.')                                           #
+print(data_test.shape)                                                                          #
+data_test.loc[data_test['label'] == 1, "NNScore"] =  v_df[v_df['test_truth']==1]['test_prob']   #
+data_test.loc[data_test['label'] == 0, "NNScore"] =  v_df[v_df['test_truth']==0]['test_prob']   #
+print(f'NN score added. The dataframe looks like - ')                                           #
+print(data_test.shape)                                                                          #
+#################################################################################################
+
 #NN-score plot
 plt.figure(figsize=(8,6))
 plt.errorbar(testsig[1][1:]-0.01, testsig[0], yerr=testsige, fmt='.', color="xkcd:green",label="Signal test", markersize='10')
@@ -394,7 +366,7 @@ plt.hist(t_df[t_df['train_truth']==1]['train_prob'],bins=mybins, histtype='step'
 plt.hist(t_df[t_df['train_truth']==0]['train_prob'],bins=mybins, histtype='step', label="Background train", linewidth=3, color='xkcd:sky blue',density=False,log=False)
 plt.legend(loc='best')
 plt.xlabel('Score',fontsize=20)
-plt.ylabel('Events',fontsize=15)
+plt.ylabel('Entries',fontsize=15)
 
 if isBarrel == True :
     plt.title(f'NN Output (barrel photons)',fontsize=20) #barrel only
@@ -424,9 +396,11 @@ backgroundpass=len(data.query('(isPFPhoton == 1) & (label == 0)'))
 backgroundrej =len(data.query('(isPFPhoton == 0) & (label == 0)'))
 signalpass    =len(data.query('(isPFPhoton == 1) & (label == 1)'))
 signalrej     =len(data.query('(isPFPhoton == 0) & (label == 1)'))
-print(f'\nPhoton pass/fail info :')
+print(f'\nPhoton pass/fail info (PF-ID) :')
+print(f'No of background photons = {len(Bkgdf)}')
 print(f'No of background photons passed = {backgroundpass}')
 print(f'No of background photons failed = {backgroundrej}')
+print(f'No of signal photons = {len(Sigdf)}')
 print(f'No of signal photons passed = {signalpass}')
 print(f'No of signal photons failed = {signalrej}')
 backgroundrej=( backgroundrej/(backgroundpass+backgroundrej) )*100
@@ -450,9 +424,10 @@ plt.xlim(0,100)
 plt.ylim(0,100)
 plt.savefig(f'output/'+modelname+ f'/ROC_{modelname}.png')
 plt.savefig(pp, format='pdf')
-
-
 plt.close()
+
+###########################################################
+#Done. Closing the opened files :
 txt.close()
 pp.close()
 print(f'\nAll done. Model is saved as {modelname}\n')
