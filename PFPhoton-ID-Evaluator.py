@@ -2,10 +2,12 @@
 #                   TESTING A SEQUENTIAL NEURAL NETWORK                     #
 #                                                                           #
 # This code reads into testing CSV Files and the trained model.h5 file.     #
-# It makes the evaluator ROC plot.                                          #
+# It makes the evaluator ROC plot and identifies some working points.       #
 # it should be run as follows :                                             #
-#            python PFPhoton-ID-Evaluator.py <trainedmodelname>             #
-# NOTE : Use the max and minvalues from the training step for normalisation #
+#                                                                           #
+#      python PFPhoton-ID-Evaluator.py <modelname> <barrel/endcap>          #
+#                                                                           #
+# NOTE : The max and minvalues are automatically taken from the models      #
 #############################################################################
 
 import numpy as np
@@ -26,139 +28,158 @@ import math
 os.system("")
 modelname = sys.argv[1]
 os.system("mkdir -p evaluated/" + modelname)
-txt = open(f'evaluated/' + modelname+ f'/Info_{modelname}.txt', "w+")
+txt = open(f'evaluated/' + modelname+ f'/info_{modelname}.txt', "w+")
 
-#Do you want barrel or endcap?
-isBarrel = True #True -> Barrel, False -> Endcap
+##########################################################
+#                    Settings:                           #
+##########################################################
+
 #Do you want to debug?
 isDebug = False #True -> nrows=1000
+#Do you want barrel or endcap?
+if sys.argv[2] == 'barrel':
+    isBarrel = True #True -> Barrel, False -> Endcap
+elif sys.argv[2] == 'endcap':
+    isBarrel = False
+else:
+    print('Please mention "barrel" or "endcap"')
+
+train_var = ['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'phohasPixelSeed','phoR9Full5x5','phohcalTower']
+#variables used in the training
+varnames = ['hadTowOverEm', 'trkSumPtHollowConeDR03', 'ecalRecHitSumEtConeDR03','sigmaIetaIeta','SigmaIEtaIEtaFull5x5','SigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'hasPixelSeed','R9Full5x5','hcalTowerSumEtConeDR03']
+#In the same order as they are fed into the training
+#removed : 'phoEcalPFClusterIso','phoHcalPFClusterIso',
 
 ###################################################################################################################################################################
 
 #READING DATA FILES :
 #Columns: phoPt, phoEta, phoPhi, phoHoverE, phohadTowOverEmValid, photrkSumPtHollow, photrkSumPtSolid, phoecalRecHit, phohcalTower, phosigmaIetaIeta, phoSigmaIEtaIEtaFull5x5, phoSigmaIEtaIPhiFull5x5, phoEcalPFClusterIso, phoHcalPFClusterIso, phohasPixelSeed, phoR9Full5x5, isPhotonMatching, isPionMother, isPromptFinalState, isHardProcess, isPFPhoton
 
-print('Reading the input files')
-mycols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
+print('\nReading the input files.')
+mycols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 if isDebug == True : #take only the first 1000 photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
+    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
-    #file5 = pd.read_csv('../TrainingSamples/df_TauGun_20.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
+    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
 else : #take all the photons
-    #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols)
-    #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols)
-    #file5 = pd.read_csv('../TrainingSamples/df_TauGun_20.csv.gzip',compression='gzip', usecols=mycols)
+    #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
+    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000000)
+    #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
+    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
+    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
     
 ##################################################################################################################################################################
 #  Defining the Signal dataframes   #
 #####################################
 
-print('Defining the Signal File')
-
+print('Defining Signal.')
 #signal1 = file1[file1['isPhotonMatching'] ==1 ]
 signal2 = file2[(file2['isPhotonMatching'] == 1) & (file2['isPromptFinalState'] == 1) ]
 #signal3 = file3[file3['isPhotonMatching'] ==1 ]
-#signal4 = file4[file4['isPhotonMatching'] ==1 ]
+signal4 = file4[(file4['isPhotonMatching'] == 1) & (file4['isPromptFinalState'] == 1) ]
+signal5 = file5[(file5['isPhotonMatching'] == 1) & (file5['isPromptFinalState'] == 1) ]
 
 #######################################
 # Defining the Background data-frames #
 #######################################
 
-print('Defining the Background File')
-
+print('Defining Background.')
 #### Adding conditions to the background file :
 #background1 = file1[file1['isPhotonMatching'] ==0 ] 
-#background2 = file2[file2['isPhotonMatching'] ==0 ]
+background2 = file2[(file4['isPhotonMatching'] == 0) | ((file2['isPhotonMatching'] == 1) & (file2['isPromptFinalState'] == 0)) ]
 #background3 = file3[file3['isPhotonMatching'] ==0 ]
 background4 = file4[(file4['isPhotonMatching'] == 0) | ((file4['isPhotonMatching'] == 1) & (file4['isPromptFinalState'] == 0)) ]
+background5 = file5[(file5['isPhotonMatching'] == 0) | ((file5['isPhotonMatching'] == 1) & (file5['isPromptFinalState'] == 0)) ]
 
+#Note all signal/background photons from all the files are considered while evaluating.
 ##################################################################
 #Adding labels and sample column to distinguish varius samples
 
 #signal1["sample"]=0
 signal2["sample"]=1
 #signal3["sample"]=2
-#signal4["sample"]=3
+signal4["sample"]=3
+signal5["sample"]=4
 #background1["sample"]=0
-#background2["sample"]=1
+background2["sample"]=1
 #background3["sample"]=2
 background4["sample"]=3
+background5["sample"]=4
 
 #signal1["label"]=1
 signal2["label"]=1
 #signal3["label"]=1
-#signal4["label"]=1
+signal4["label"]=1
+signal5["label"]=1
 #background1["label"]=0
-#background2["label"]=0
+background2["label"]=0
 #background3["label"]=0
 background4["label"]=0
+background5["label"]=0
 
 ################################################################
 #Concatinating everything, and putting extra cuts:
 
-Sig_alldf = pd.concat([signal2])
-#Sig_alldf = Sig_alldf[ Sig_alldf['isHardProcess'] == 1]
-
+Sig_alldf = pd.concat([signal2, signal4, signal5])
 if isBarrel == True :
     Sig_alldf = Sig_alldf[abs(Sig_alldf['phoEta']) < 1.442] #barrel only
 else:
     Sig_alldf = Sig_alldf[abs(Sig_alldf['phoEta']) > 1.566] #endcap only
 
 #Manually reducing signals :
-#Sig_alldf=Sig_alldf.sample(frac=1).reset_index(drop=True) #randomizing the rows 
-#Sig_alldf=Sig_alldf.head(1000000) #Keeps only the first 1 million rows
+Sig_alldf=Sig_alldf.sample(frac=1).reset_index(drop=True) #randomizing the rows 
+Sig_alldf=Sig_alldf.head(1000000) #Keeps only the first 1 million rows
 
-print('Signal Photons dataframe created.')
-
-Bkg_alldf = pd.concat([background4])
+Bkg_alldf = pd.concat([background2, background4, background5])
 if isBarrel == True :
     Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) < 1.442] #barrel only
 else :
     Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) > 1.566] #endcap only
 
-print("Background dataframe created.")
 data = pd.concat([Sig_alldf, Bkg_alldf])
+data_train, data_test = train_test_split(data, test_size=0.5, stratify=data["label"])
+data=data_test #This makes sure that the testing samples are orthogonal
+#If a completely new dataset is used, this step is not necessary.
+print('Dataframes are succesfully created.')
 
 ##########################################################
-n_sig = len(Sig_alldf)
-n_bkg = len(Bkg_alldf)
-print('\n#########################################')
-print(f'Number of Signal Photons = {n_sig}')
-print(f'Number of Background Photons = {n_bkg}')
-print('#########################################\n')
-txt.write(f'Number of Signal Photons = {n_sig}\n')
-txt.write(f'Number of Background Photons = {n_bkg}\n')
+n_sig = len(data.query('(label==1)'))
+n_bkg = len(data.query('(label==0)'))
 
-X_sig, y_sig = Sig_alldf[['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5','phoEcalPFClusterIso','phoHcalPFClusterIso','phohasPixelSeed','phoR9Full5x5','phohcalTower']].values, Sig_alldf[['label']].values
-X_bkg, y_bkg = Bkg_alldf[['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5','phoEcalPFClusterIso','phoHcalPFClusterIso','phohasPixelSeed','phoR9Full5x5','phohcalTower']].values, Bkg_alldf[['label']].values
-#We don't need to split it, since we are only evaluating the NN
+print(f"n_sig = {n_sig}")
+print(f"n_bkg = {n_bkg}")
+#Statistics:
+txt.write("\n\nNUMBER OF PHOTONS :")
+txt.write(f'\nTotal number of Signal Photons : {n_sig}')
+txt.write(f'\nTotal number of Background Photons : {n_bkg}')
+QCD_contribution = len(data.query('(label==0) & (sample==3)'))
+Tau_contribution = len(data.query('(label==0) & (sample==4)'))
+QCD_contribution_frac = (QCD_contribution*100) / (QCD_contribution+Tau_contribution)
+Tau_contribution_frac = (Tau_contribution*100) / (QCD_contribution+Tau_contribution)
+txt.write(f'\nContribution from QCD file = {QCD_contribution} ({QCD_contribution_frac:.0f}%)')
+txt.write(f'\nContribution from TauGun file = {Tau_contribution} ({Tau_contribution_frac:.0f}%)')
+
+X_sig, y_sig = Sig_alldf[train_var].values, Sig_alldf[['label']].values
+X_bkg, y_bkg = Bkg_alldf[train_var].values, Bkg_alldf[['label']].values
 
 #########################################################
 #                     NORMALISATION                     #
 #########################################################
-#The following two lists are to be manually put from the training step.
+# Reading from the scaler file:
+maxValues=[]
+minValues=[]
 
-if modelname == 'barrel' :
-    #Barrel:
-    maxValues = [0.14999595, 9716.979, 1453.3214, 0.025382034, 0.030323075, 0.0006741011, 1469.4491, 1564.4443, 1.0, 40.157692, 1306.034]
-    minValues = [0.0, 0.0, 0.0, 0.0, 0.0, -0.00051127985, 0.0, 0.0, 0.0, 0.13221417, 0.0]
-elif modelname == 'endcap' :
-    #Endcap:
-    maxValues = [0.14999561, 45903.42, 1078.8676, 0.08227496, 0.08187144, 0.0027291286, 1080.1742, 1411.9785, 1.0, 33.16064, 777.81445]
-    minValues = [0.0, 0.0, 0.0, 0.0, 0.0, -0.0027415548, 0.0, 0.0, 0.0, 0.13407391, 0.067593366]
-else :
-    print('Please load the correct model. Errors will show up.')
-
-print('### Normalisation Parameters : ###')
-print('maxValues :')
-print(str(maxValues))
-print('minValues :')
-print(str(minValues))
-print('##################################')
+scaler_file=open(f'models/{modelname}/scaler_{modelname}.txt',"r")
+lines=scaler_file.readlines()
+for x in lines:
+    maxValues.append(float(x.split(' ')[3]))
+    minValues.append(float(x.split(' ')[2]))
+scaler_file.close()
+print('\nNormalisation Paremeters (min-max):')
+print(f'maxValues = {maxValues}')
+print(f'minValues = {minValues}')
 
 MaxMinusMin = []
 entries = 0
@@ -171,15 +192,20 @@ normedX_sig = 2*((X_sig - minValues)/(MaxMinusMin)) -1.0
 X_sig = normedX_sig
 normedX_bkg = 2*((X_bkg - minValues)/(MaxMinusMin)) -1.0
 X_bkg = normedX_bkg
-print("\nThe data has been normalised.\n")
+print("The data has been normalised.\n")
+
+#print(X_sig.shape)
+#print(X_bkg.shape)
 
 ########################################################
 #             Loading the neural network               #
 ########################################################
 
-mymodel = tf.keras.models.load_model('output/'+ modelname + '/' + modelname + '.h5')
-mymodel.load_weights('output/'+ modelname + '/' + modelname + '.h5')
-print("model loaded")
+print('\nLoading the model.')
+mymodel = tf.keras.models.load_model('models/'+ modelname + '/' + modelname + '.h5')
+mymodel.load_weights('models/'+ modelname + '/' + modelname + '.h5')
+print("Model loaded successfully.")
+print('\nBEGINNING THE TESTING PROCESS\n')
 
 #Caclculating tpr, fnr and adding the NN score as a separate column to the dataframe:
 def get_roc_details(model,Xbk,ybk,Xsig,ysig):
@@ -215,7 +241,7 @@ v_df = pd.DataFrame()
 v_df['truth'] = data['label'].values
 v_df['prob']=0
 
-X, y = data[['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5','phoEcalPFClusterIso','phoHcalPFClusterIso','phohasPixelSeed','phoR9Full5x5','phohcalTower']].values, data[['label']].values
+X, y = data[train_var].values, data[['label']].values
 normedX = 2*((X - minValues)/(MaxMinusMin)) -1.0
 X = normedX
 
@@ -235,9 +261,18 @@ data["NNScore"] = val_pred_proba
 print(f'NN score added. The dataframe looks like - ')
 print(data.shape)
 
-data=data.drop(['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5','phoEcalPFClusterIso','phoHcalPFClusterIso','phohasPixelSeed','phoR9Full5x5','phohcalTower', 'phoPt', 'phoEta', 'phoPhi', 'phohadTowOverEmValid', 'photrkSumPtSolid', 'isHardProcess'], axis=1)
+data=data.drop(['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5','phoEcalPFClusterIso','phoHcalPFClusterIso','phohasPixelSeed','phoR9Full5x5','phohcalTower', 'phoPhi', 'phohadTowOverEmValid', 'photrkSumPtSolid', 'isHardProcess'], axis=1)
 
 print(data.head)
+########################################################################
+#test :
+true_positive = data[(data['NNScore']>0.2) & (data['label']==1)]
+manual_sigeff = (len(true_positive))/(len(data.query('(label == 1)')))
+print('\nTest')
+print(f'Manual sig_eff @cut0.2 is {manual_sigeff*100}\n')
+
+
+
 #########################################################################
 
 #The following two qunatites are sig_eff (tpr) and bkg_rej (fnr) of the current PF-ID.
@@ -263,14 +298,14 @@ def match(value_, list_) :
         j = j+1
 
 # For a particular background rejection (fnr_PF), we need the matching tpr_NN, fpr_NN and the corresponding NN cut.
-
 fnr_NN, index = match(fnr_PF, myfnr)
 tpr_NN = mytpr[index]
 
 #Estimating the cut on the NN score that gives tpr_NN and fpr_NN:
-NN_cuts=np.arange(0.7, 1, 0.005)
+NN_cuts=np.arange(0, 1.01, 0.01)
 fnr_cuts=[]
 print(f'Trial cuts on the NN score = {NN_cuts}')
+    
 print(f'Target fnr = {fnr_NN}')
 i=0
 while i<len(NN_cuts):
@@ -291,13 +326,21 @@ while i<len(NN_cuts):
     num_temp = len(data.query(f' (label==0) & (NNScore < {NN_cuts[i]})')) #bkg photons passing the NN cut
     den_temp = len(data.query(f' (label==0)')) #all bkg photons
     fnr_temp = (num_temp*100)/den_temp
-    #print('')
-    #print(fnr_temp)
-    #print(abs(fnr_temp - matching_fnr))
+    
     if fnr_temp == matching_fnr :
         Optimum_Cut = NN_cuts[i]
         break
     i=i+1
+
+print("\nTABLE FOR DIFFERENT NN_CUTS AND FNR :")
+i=0
+while i<len(NN_cuts):
+    num_temp = len(data.query(f' (label==0) & (NNScore < {NN_cuts[i]})')) #bkg photons passing the NN cut
+    den_temp = len(data.query(f' (label==0)')) #all bkg photons
+    fnr_temp = (num_temp*100)/den_temp
+    print(f"At NNCut = {NN_cuts[i]:.2f} fnr_NN ~ {fnr_temp:.2f}, fnr_PF ~ {fnr_PF:.2f}, difference from fnr_PF = {(fnr_PF-fnr_temp):.3f}")
+    i=i+1
+    
 
 
 #REPORT :
@@ -306,9 +349,41 @@ print(f'For the same value of bkg_reg in the current PF-ID ({fnr_PF:.2f}), \nthe
 print(f'Sig_eff has increased from {tpr_PF:.2f} to {tpr_NN:.2f}')
 txt.write(f'\nFor the same value of bkg_reg in the current PF-ID ({fnr_PF:.2f}), \nthe corresponding sig_eff is : {tpr_NN:.2f}')
 txt.write(f'\nSig_eff has increased from {tpr_PF:.2f} to {tpr_NN:.2f}')
-print(f'\nThe required NN_cut is at = {NN_cuts[i]:.2f}')
-txt.write(f'\nThe required NN_cut is at = {NN_cuts[i]:.2f}')
+print(f'\nThe required NN_cut is at = {Optimum_Cut:.2f}')
+txt.write(f'\nThe required NN_cut is at = {Optimum_Cut:.2f}')
 print('#######################################################')
+
+#extra points above and below this cut:
+def find_nearby(Cut, err):
+    #tpr points:
+    sig_num1=len(data.query(f' (label==1) & (NNScore > {Cut+err})'))
+    sig_num2=len(data.query(f' (label==1) & (NNScore > {Cut-err})'))
+    sig_den= len(data.query(f' (label==1)'))
+    tpr1=(sig_num1*100)/sig_den
+    tpr2=(sig_num2*100)/sig_den
+    #fnr points:
+    bkg_num1=len(data.query(f' (label==0) & (NNScore < {Cut+err})'))
+    bkg_num2=len(data.query(f' (label==0) & (NNScore < {Cut-err})'))
+    bkg_den= len(data.query(f' (label==0)'))
+    fnr1=(bkg_num1*100)/bkg_den
+    fnr2=(bkg_num2*100)/bkg_den
+
+    print(Cut+err)
+    print(err)
+    #return :
+    if (Cut+err)<1 and (Cut-err)>0 :
+        return tpr1, fnr1, tpr2, fnr2
+    else :
+        print("Error :The cuts are beyond the limit (0, 1)")
+        print("Fix the err variable.")
+
+#We also select two working points above and below the optimum cut, which are defined as follows.
+err = 0.1
+if Optimum_Cut > 0.92:
+    err = abs(1-Optimum_Cut) - 0.005
+    
+tpr1, fnr1, tpr2, fnr2 = find_nearby(Optimum_Cut, err)
+
     
 ########################################################
 #                      Plotting                        #
@@ -317,8 +392,20 @@ print('#######################################################')
 print('\nPlotting has begun')
 #Plotting the ROC:
 plt.figure(figsize=(8,8))
-plt.plot([signaleff], [backgroundrej], marker='o', color="red", markersize=6, label='CMSSW flag')
-plt.plot(mytpr,myfnr,color='xkcd:bright blue',label='QCD (Testing AUC = %0.4f)' % myauc)
+#ROC:
+plt.plot(mytpr,myfnr,color='xkcd:bright blue',label='Testing AUC = %0.4f' % myauc)
+#CMSSW flag:
+plt.plot(signaleff, backgroundrej, marker='o', color="red", markersize=8, label=f'CMSSW flag ({signaleff:.0f},{backgroundrej:.0f})')
+#Three points on the ROC
+print(tpr1)
+print(fnr1)
+plt.xlim(0,100)
+plt.ylim(0,100)
+plt.plot(tpr1, fnr1, marker=(5, 1, 0),  color="blue", markersize=8, label=f'NN cut at {(Optimum_Cut+err):.2f} ({tpr1:.0f},{fnr1:.0f})')
+plt.plot(tpr_NN, fnr_NN, marker=(5, 1, 0), color="red", markersize=8, label=f'NN cut at {Optimum_Cut:.2f} ({tpr_NN:.0f},{fnr_NN:.0f})')
+plt.plot(tpr2, fnr2, marker=(5, 1, 0), color="black", markersize=8, label=f'NN cut at {(Optimum_Cut-err):.2f} ({tpr2:.0f},{fnr2:.0f})')
+#marker=(5, 1, 0),
+
 plt.legend(loc='lower right')
 if isBarrel == True :
     plt.title(f'ROC curve (testing, barrel)',fontsize=20)
@@ -326,8 +413,6 @@ else :
     plt.title(f'ROC curve (testing, endcap)',fontsize=20)
 plt.xlabel('Signal Efficiency',fontsize=20)
 plt.ylabel('Background Rejection',fontsize=20)
-plt.xlim(0,100)
-plt.ylim(0,100)
 plt.savefig('evaluated/' + modelname + '/' + modelname + '.png')
 plt.close()
 

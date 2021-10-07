@@ -1,11 +1,10 @@
 #############################################################################
-#                             EFFICIENCY CHECKER                            #
+#                               PLOTMAKER                                   #
 #                                                                           #
-# Given a NN_cut, this code reads into CSV Files, and plots signal and      #
-# background efficiencies for that cut in different pT bins.                #
-# It should be run as follows :                                             #
-#                                                                           #
-#  python PFPhoton-ID-Efficiency.py <modelname> <barrel/endcap> <NNCut>     #
+# This code reads into CSV Files, determines what is signal and background, #
+# and makes plots of the variables.                                         #
+# it should be run as follows :                                             #
+#                 python PFPhoton-ID-Plotmaker <foldername>                 #
 #                                                                           #
 #############################################################################
 
@@ -27,9 +26,9 @@ import math
 ###################################################################################################################################################################
 os.system("")
 modelname = sys.argv[1]
-nn_cut = float(sys.argv[3])
-os.system("mkdir -p efficiency/" + modelname + '_' + str(nn_cut))
-txt = open(f'efficiency/' + modelname +'_'+ str(nn_cut) + f'/Info_{modelname}.txt', "w+")
+nn_cut = 0.7
+os.system("mkdir -p PFefficiency/" + modelname + '_' + str(nn_cut))
+txt = open(f'PFefficiency/' + modelname +'_'+ str(nn_cut) + f'/Info_{modelname}.txt', "w+")
 
 #Cut on the Neural Network plot :
 NN_cut = float(nn_cut)
@@ -38,8 +37,6 @@ NN_cut = float(nn_cut)
 #                    Settings:                           #
 ##########################################################
 isNorm = True
-#Do you want to debug?
-isDebug = False #True -> nrows=1000
 
 #Do you want barrel or endcap?
 if sys.argv[2] == 'barrel':
@@ -48,7 +45,8 @@ elif sys.argv[2] == 'endcap':
     isBarrel = False
 else:
     print('Please mention "barrel" or "endcap"')
-
+#Do you want to debug?
+isDebug = False #True -> nrows=1000
 
 train_var = ['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'phohasPixelSeed','phoR9Full5x5','phohcalTower']
 #variables used in the training
@@ -64,16 +62,16 @@ print('Reading the input files')
 mycols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 if isDebug == True : #take only the first 1000 photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
+    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
 else : #take all the photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000000)
+    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=500000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
+    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=100000)
+    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=50000)
 
 #########################################################
 #                  making dataframes                    #
@@ -127,90 +125,6 @@ txt.write(f'\nContribution from QCD file = {QCD_contribution} ({QCD_contribution
 txt.write(f'\nContribution from TauGun file = {Tau_contribution} ({Tau_contribution_frac:.0f}%)')
 
 
-#X_sig, y_sig = Sig_alldf[train_var].values, Sig_alldf[['label']].values
-#X_bkg, y_bkg = Bkg_alldf[train_var].values, Bkg_alldf[['label']].values
-#We don't need to split it, since we are only evaluating the NN
-
-#########################################################
-#                     NORMALISATION                     #
-#########################################################
-#The following two lists are to be manually put from the training step.
-
-# Reading from the scaler file:
-maxValues=[]
-minValues=[]
-
-scaler_file=open(f'models/{modelname}/scaler_{modelname}.txt',"r")
-lines=scaler_file.readlines()
-for x in lines:
-    maxValues.append(float(x.split(' ')[3]))
-    minValues.append(float(x.split(' ')[2]))
-scaler_file.close()
-print('\nNormalisation Paremeters (min-max):')
-print(f'maxValues = {maxValues}')
-print(f'minValues = {minValues}')
-
-MaxMinusMin = []
-entries = 0
-while entries<len(maxValues):
-    difference = maxValues[entries]-minValues[entries]
-    MaxMinusMin.append(difference)
-    entries = entries + 1
-    
-#normedX_sig = 2*((X_sig - minValues)/(MaxMinusMin)) -1.0
-#X_sig = normedX_sig
-#normedX_bkg = 2*((X_bkg - minValues)/(MaxMinusMin)) -1.0
-#X_bkg = normedX_bkg
-
-X, y = data[train_var].values, data[['label']].values
-normedX = 2*((X - minValues)/(MaxMinusMin)) -1.0
-X = normedX
-print("The data has been normalised.")
-
-########################################################
-#             Loading the neural network               #
-########################################################
-
-print('\nLoading the model.')
-mymodel = tf.keras.models.load_model('models/'+ modelname + '/' + modelname + '.h5')
-mymodel.load_weights('models/'+ modelname + '/' + modelname + '.h5')
-print("Model loaded successfully.")
-print('\nBEGINNING THE TESTING PROCESS\n')
-
-#Caclculating tpr, fnr and adding the NN score as a separate column to the dataframe:
-def get_roc_details(model,Xbk,ybk,Xsig,ysig):
-    bk_proba = model.predict(Xbk)
-    sig_proba= model.predict(Xsig)
-    proba_tot = np.concatenate((sig_proba,bk_proba),axis=0)
-    class_tot = np.concatenate((ysig,ybk),axis=0)
-    fpr, tpr, _ = roc_curve(class_tot,proba_tot)
-    aucscore = auc(tpr,1-fpr)
-    tpr=tpr*100
-    fnr=(1-fpr)*100    
-    return fnr,tpr,aucscore
-
-#myfnr, mytpr, myauc = get_roc_details(mymodel,X_sig,y_sig,X_bkg,y_bkg)
-
-v_df = pd.DataFrame()
-v_df['truth'] = data['label'].values
-v_df['prob']=0
-
-val_pred_proba = mymodel.predict(X)
-
-#########################################################################
-#We store the NNScore in a new column :
-print('\nAdding the NN score to the dataframe.')
-print(data.shape)
-data["NNscore"] = val_pred_proba
-#data.loc[data['label'] == 1, "NNScore"] =  v_df[v_df['truth']==1]['prob']
-#data.loc[data['label'] == 0, "NNScore"] =  v_df[v_df['truth']==0]['prob']
-print(f'NN score added. The dataframe looks like - ')
-print(data.shape)
-
-data=data.drop(['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phohasPixelSeed','phoR9Full5x5','phohcalTower', 'phoPhi', 'phohadTowOverEmValid', 'photrkSumPtSolid', 'isHardProcess'], axis=1)
-
-print(data.head)
-
 ##########################################################################
 #At this point, the dataframe 'data' has all the photons wth their NNscore
 #Efficiency calculation starts here.
@@ -241,7 +155,7 @@ while i<len(Pt_bins_err):
 #######################################
 
 def efficiency(label_, bintype_, binno_, nn_) :
-    numerator = len(data.query(f'(label == {label_}) & ({bintype_} == {binno_}) & (NNscore > {nn_})'))
+    numerator = len(data.query(f'(label == {label_}) & ({bintype_} == {binno_}) & (isPFPhoton == 1)'))
     denominator = len(data.query(f'(label == {label_}) & ({bintype_} == {binno_})'))
     if denominator == 0 :
         print('Some bins have 0 entries, setting eff to zero')
@@ -252,7 +166,7 @@ def efficiency(label_, bintype_, binno_, nn_) :
         return eff, eff_err
 
 def efficiency_sample(sample_, label_, bintype_, binno_, nn_) :
-    numerator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_}) & (NNscore > {nn_})'))
+    numerator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_}) & (isPFPhoton == 1)'))
     denominator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_})'))
     if denominator == 0 :
         return 0, 0
@@ -269,9 +183,9 @@ def efficiency_sample(sample_, label_, bintype_, binno_, nn_) :
 sig_eff_global=0
 bkg_eff_global=0
 
-num_sig = len(data.query(f'(label == 1) &(NNscore > {NN_cut})'))
+num_sig = len(data.query(f'(label == 1) &(isPFPhoton == 1)'))
 den_sig = len(data.query(f'(label == 1)'))
-num_bkg = len(data.query(f'(label == 0) & (NNscore > {NN_cut})'))
+num_bkg = len(data.query(f'(label == 0) & (isPFPhoton == 1)'))
 den_bkg = len(data.query(f'(label == 0)'))
 if(den_sig > 0):
     sig_eff_global = (num_sig)/den_sig
@@ -307,9 +221,9 @@ txt.write(str(bkg_eff_list))
 def global_efficiency_sample(sample_) :
     sig_eff_global1 = 0
     bkg_eff_global1 = 0
-    num_sig1 = len(data.query(f'(sample == {sample_}) & (label == 1) &(NNscore > {NN_cut})'))
+    num_sig1 = len(data.query(f'(sample == {sample_}) & (label == 1) & (isPFPhoton == 1)'))
     den_sig1 = len(data.query(f'(sample == {sample_}) &(label == 1)'))
-    num_bkg1 = len(data.query(f'(sample == {sample_}) &(label == 0) & (NNscore > {NN_cut})'))
+    num_bkg1 = len(data.query(f'(sample == {sample_}) &(label == 0) & (isPFPhoton == 1)'))
     den_bkg1 = len(data.query(f'(sample == {sample_}) &(label == 0)'))
     if(den_sig1 > 0):
         sig_eff_global1 = (num_sig1)/den_sig1
@@ -323,7 +237,7 @@ sig_eff_global_Tau, bkg_eff_global_Tau = global_efficiency_sample(4)
 
 #In Pt Bins :
 def efficiency_sample(sample_, label_, bintype_, binno_, nn_) :
-    numerator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_}) & (NNscore > {nn_})'))
+    numerator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_}) & (isPFPhoton == 1)'))
     denominator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_})'))
     if denominator == 0 :
         return 0, 0
@@ -363,7 +277,7 @@ plt.figure(figsize=(8,8))
 plt.errorbar(Pt_bins_plot, sig_eff_list_GJet, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_GJet, fmt='.', color="xkcd:green",label="GJet", markersize='5')
 plt.errorbar(Pt_bins_plot, sig_eff_list_QCD, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_QCD, fmt='.', color="xkcd:denim",label="QCD", markersize='5')
 plt.errorbar(Pt_bins_plot, sig_eff_list_Tau, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_Tau, fmt='.', color="xkcd:red",label="TauGun", markersize='5')
-plt.legend(loc=location, title=f' NNcut = {NN_cut}\n Global signal eff ={sig_eff_global:.2f}')
+plt.legend(loc=location, title=f' Global signal eff ={sig_eff_global:.2f}')
 if isBarrel == True :
     plt.title('Signal Efficiencies in Pt bins (Barrel)', fontsize=20)
 else :
@@ -373,7 +287,7 @@ plt.ylabel('Efficiency',fontsize=15)
 plt.ylim(-0.05,1.05)
 plt.xlim(0,200)
 plt.grid(axis="x")
-plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) + f'/sig_eff_Pt_bins_{modelname}.png')
+plt.savefig(f'PFefficiency/' + modelname +'_'+ str(nn_cut) + f'/sig_eff_Pt_bins_{modelname}.png')
 plt.close()
 
 #Plot 2 : pT efficiency plot (Background)
@@ -381,7 +295,7 @@ plt.figure(figsize=(8,8))
 plt.errorbar(Pt_bins_plot, bkg_eff_list_GJet, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_GJet, fmt='.', color="xkcd:green",label="GJet", markersize='5')
 plt.errorbar(Pt_bins_plot, bkg_eff_list_QCD, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_QCD, fmt='.', color="xkcd:denim",label="QCD", markersize='5')
 plt.errorbar(Pt_bins_plot, bkg_eff_list_Tau, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_Tau, fmt='.', color="xkcd:red",label="TauGun", markersize='5')
-plt.legend(loc=location, title=f' NNcut = {NN_cut}\n Global bkg eff ={bkg_eff_global:.2f}')
+plt.legend(loc=location, title=f' Global bkg eff ={bkg_eff_global:.2f}')
 if isBarrel == True :
     plt.title('Background Efficiencies in Pt bins (Barrel)', fontsize=20)
 else :
@@ -391,7 +305,7 @@ plt.ylabel('Efficiency',fontsize=15)
 plt.ylim(-0.05,1.05)
 plt.xlim(0,200)
 plt.grid(axis="x")
-plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) + f'/bkg_eff_Pt_bins_{modelname}.png')
+plt.savefig(f'PFefficiency/' + modelname +'_'+ str(nn_cut) + f'/bkg_eff_Pt_bins_{modelname}.png')
 plt.close()
 
 #plot 3 : pT spectrum (signal):
@@ -406,7 +320,7 @@ if isBarrel == True :
     plt.title(f'Signal Photon Pt (barrel)',fontsize=20) #barrel only
 else :
     plt.title(f'Signal Photon Pt (endcap)',fontsize=20) #endcap only
-plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) +f'/phoPt_{modelname}_sigonly.png')
+plt.savefig(f'PFefficiency/' + modelname +'_'+ str(nn_cut) +f'/phoPt_{modelname}_sigonly.png')
 plt.close()
 
 #plot 4 : pT spectrum (background):
@@ -421,7 +335,7 @@ if isBarrel == True :
     plt.title(f'Background Photon Pt (barrel)',fontsize=20) #barrel only
 else :
     plt.title(f'Background Photon Pt (endcap)',fontsize=20) #endcap only
-plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) +f'/phoPt_{modelname}_bkgonly.png')
+plt.savefig(f'PFefficiency/' + modelname +'_'+ str(nn_cut) +f'/phoPt_{modelname}_bkgonly.png')
 plt.close()
 
 

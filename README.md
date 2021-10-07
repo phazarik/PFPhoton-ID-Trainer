@@ -35,4 +35,7 @@ The following two codes calculates and plots the signal efficiency and backgroun
 ```
 [] python PFPhoton-ID-Efficiency_PF.py <modelname> <barrel/endcap>
 ```
-These two lines will produce efficiency plots in two new folders : ```efficiency/<modelname>_<nn_cut>``` and ```efficiency_PF/<modelname>```
+These two lines will produce efficiency plots in two new folders : ```efficiency/<modelname>_<nn_cut>``` and ```PFefficiency/<modelname>```
+
+
+
