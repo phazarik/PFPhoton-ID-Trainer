@@ -37,9 +37,10 @@ NN_cut = float(nn_cut)
 ##########################################################
 #                    Settings:                           #
 ##########################################################
+#Do you want normalised plot?
 isNorm = True
 #Do you want to debug?
-isDebug = False #True -> nrows=1000
+isDebug = True #True -> nrows=1000
 
 #Do you want barrel or endcap?
 if sys.argv[2] == 'barrel':
@@ -426,14 +427,6 @@ plt.close()
 
 
 
-
-
-
-
-
-
-
-
 #################################################################################
 txt.close()
-print(f'\nAll done. Plots are saved in the folder plots\n')
+print(f'\nAll done. Plots are saved in the folder : efficiency/{modelname}_{nn_cut}\n')

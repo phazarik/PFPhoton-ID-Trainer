@@ -36,7 +36,7 @@ scaler =  open(f'models/' + modelname+ f'/scaler_{modelname}.txt', "w+")
 ##########################################################
 
 #Do you want to debug?
-isDebug = False #True -> nrows=1000
+isDebug = True #True -> nrows=1000
 
 #Do you want barrel or endcap?
 if sys.argv[2] == 'barrel':
@@ -305,8 +305,8 @@ model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy']
 #opt = tf.keras.optimizers.Adam(learning_rate=0.001)
 
 #Training the model :
-#history = model.fit(X_train,y_train,epochs=epochs_,batch_size=batch_size_,validation_data=(X_test,y_test),verbose=0) #Without weight
-history = model.fit(X_train,y_train,epochs=epochs_,batch_size=batch_size_,validation_data=(X_test,y_test, w_test),verbose=0, sample_weight=w_train) #With weight
+history = model.fit(X_train,y_train,epochs=epochs_,batch_size=batch_size_,validation_data=(X_test,y_test),verbose=0) #Without weight
+#history = model.fit(X_train,y_train,epochs=epochs_,batch_size=batch_size_,validation_data=(X_test,y_test, w_test),verbose=0, sample_weight=w_train) #With weight
 
 #Saving the output :
 print('The NN architecture is')

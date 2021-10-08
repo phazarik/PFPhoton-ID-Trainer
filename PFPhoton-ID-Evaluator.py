@@ -35,7 +35,7 @@ txt = open(f'evaluated/' + modelname+ f'/info_{modelname}.txt', "w+")
 ##########################################################
 
 #Do you want to debug?
-isDebug = False #True -> nrows=1000
+isDebug = True #True -> nrows=1000
 #Do you want barrel or endcap?
 if sys.argv[2] == 'barrel':
     isBarrel = True #True -> Barrel, False -> Endcap

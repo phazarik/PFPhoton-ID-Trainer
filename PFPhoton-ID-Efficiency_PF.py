@@ -1,10 +1,11 @@
 #############################################################################
-#                               PLOTMAKER                                   #
+#                        PF EFFICIENCY CHECKER                              #
 #                                                                           #
-# This code reads into CSV Files, determines what is signal and background, #
-# and makes plots of the variables.                                         #
+# This code reads into CSV Files, and checks the efficiencies of CMSSW ID   #
+# in differnt pT bins.                                                      #
 # it should be run as follows :                                             #
-#                 python PFPhoton-ID-Plotmaker <foldername>                 #
+#                                                                           #
+#             python PFPhoton-ID-Efficiency_PF <barrel/endcap>              #
 #                                                                           #
 #############################################################################
 
@@ -25,28 +26,24 @@ import math
 
 ###################################################################################################################################################################
 os.system("")
-modelname = sys.argv[1]
-nn_cut = 0.7
-os.system("mkdir -p PFefficiency/" + modelname + '_' + str(nn_cut))
-txt = open(f'PFefficiency/' + modelname +'_'+ str(nn_cut) + f'/Info_{modelname}.txt', "w+")
-
-#Cut on the Neural Network plot :
-NN_cut = float(nn_cut)
+os.system(f"mkdir -p PFefficiency/" + sys.argv[1])
+txt = open(f'PFefficiency/' + sys.argv[1] + f'/Info_{sys.argv[1]}.txt', "w+")
 
 ##########################################################
 #                    Settings:                           #
 ##########################################################
+#Do you want normalised plots?
 isNorm = True
+#Do you want to debug?
+isDebug = True #True -> nrows=1000
 
 #Do you want barrel or endcap?
-if sys.argv[2] == 'barrel':
+if sys.argv[1] == 'barrel':
     isBarrel = True #True -> Barrel, False -> Endcap
-elif sys.argv[2] == 'endcap':
+elif sys.argv[1] == 'endcap':
     isBarrel = False
 else:
     print('Please mention "barrel" or "endcap"')
-#Do you want to debug?
-isDebug = False #True -> nrows=1000
 
 train_var = ['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'phohasPixelSeed','phoR9Full5x5','phohcalTower']
 #variables used in the training
@@ -62,16 +59,16 @@ print('Reading the input files')
 mycols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 if isDebug == True : #take only the first 1000 photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
+    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
+    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
 else : #take all the photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=500000)
+    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=100000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=50000)
+    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
+    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
 
 #########################################################
 #                  making dataframes                    #
@@ -154,7 +151,7 @@ while i<len(Pt_bins_err):
 #      efficiency calculations        # 
 #######################################
 
-def efficiency(label_, bintype_, binno_, nn_) :
+def efficiency(label_, bintype_, binno_) :
     numerator = len(data.query(f'(label == {label_}) & ({bintype_} == {binno_}) & (isPFPhoton == 1)'))
     denominator = len(data.query(f'(label == {label_}) & ({bintype_} == {binno_})'))
     if denominator == 0 :
@@ -165,7 +162,7 @@ def efficiency(label_, bintype_, binno_, nn_) :
         eff_err = 1/math.sqrt(denominator)
         return eff, eff_err
 
-def efficiency_sample(sample_, label_, bintype_, binno_, nn_) :
+def efficiency_sample(sample_, label_, bintype_, binno_) :
     numerator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_}) & (isPFPhoton == 1)'))
     denominator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_})'))
     if denominator == 0 :
@@ -198,8 +195,8 @@ sig_eff_list_err =[]
 bkg_eff_list = []
 bkg_eff_list_err = []
 for iterator in range(len(Pt_bins)-1):
-    sig_eff, sig_eff_err = efficiency(1, 'Pt_bin', iterator, NN_cut)
-    bkg_eff, bkg_eff_err = efficiency(0, 'Pt_bin', iterator, NN_cut)
+    sig_eff, sig_eff_err = efficiency(1, 'Pt_bin', iterator)
+    bkg_eff, bkg_eff_err = efficiency(0, 'Pt_bin', iterator)
     sig_eff_list.append(sig_eff)
     bkg_eff_list.append(bkg_eff)
     sig_eff_list_err.append(sig_eff_err)
@@ -236,7 +233,7 @@ sig_eff_global_QCD, bkg_eff_global_QCD = global_efficiency_sample(3)
 sig_eff_global_Tau, bkg_eff_global_Tau = global_efficiency_sample(4)
 
 #In Pt Bins :
-def efficiency_sample(sample_, label_, bintype_, binno_, nn_) :
+def efficiency_sample(sample_, label_, bintype_, binno_) :
     numerator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_}) & (isPFPhoton == 1)'))
     denominator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_})'))
     if denominator == 0 :
@@ -252,8 +249,8 @@ def calculate_pt_eff_sample(sample_):
     bkg_eff_list1 = []
     bkg_eff_list_err1 = []
     for iterator in range(len(Pt_bins)-1):
-        sig_eff1, sig_eff_err1 = efficiency_sample(sample_, 1, 'Pt_bin', iterator, NN_cut)
-        bkg_eff1, bkg_eff_err1 = efficiency_sample(sample_, 0, 'Pt_bin', iterator, NN_cut)
+        sig_eff1, sig_eff_err1 = efficiency_sample(sample_, 1, 'Pt_bin', iterator)
+        bkg_eff1, bkg_eff_err1 = efficiency_sample(sample_, 0, 'Pt_bin', iterator)
         sig_eff_list1.append(sig_eff1)
         bkg_eff_list1.append(bkg_eff1)
         sig_eff_list_err1.append(sig_eff_err1)
@@ -287,7 +284,7 @@ plt.ylabel('Efficiency',fontsize=15)
 plt.ylim(-0.05,1.05)
 plt.xlim(0,200)
 plt.grid(axis="x")
-plt.savefig(f'PFefficiency/' + modelname +'_'+ str(nn_cut) + f'/sig_eff_Pt_bins_{modelname}.png')
+plt.savefig(f'PFefficiency/' + sys.argv[1] + f'/sig_eff_Pt_bins_{sys.argv[1]}.png')
 plt.close()
 
 #Plot 2 : pT efficiency plot (Background)
@@ -305,7 +302,7 @@ plt.ylabel('Efficiency',fontsize=15)
 plt.ylim(-0.05,1.05)
 plt.xlim(0,200)
 plt.grid(axis="x")
-plt.savefig(f'PFefficiency/' + modelname +'_'+ str(nn_cut) + f'/bkg_eff_Pt_bins_{modelname}.png')
+plt.savefig(f'PFefficiency/' + sys.argv[1] + f'/bkg_eff_Pt_bins_{sys.argv[1]}.png')
 plt.close()
 
 #plot 3 : pT spectrum (signal):
@@ -320,7 +317,7 @@ if isBarrel == True :
     plt.title(f'Signal Photon Pt (barrel)',fontsize=20) #barrel only
 else :
     plt.title(f'Signal Photon Pt (endcap)',fontsize=20) #endcap only
-plt.savefig(f'PFefficiency/' + modelname +'_'+ str(nn_cut) +f'/phoPt_{modelname}_sigonly.png')
+plt.savefig(f'PFefficiency/' + sys.argv[1]  +f'/phoPt_{sys.argv[1]}_sigonly.png')
 plt.close()
 
 #plot 4 : pT spectrum (background):
@@ -335,19 +332,12 @@ if isBarrel == True :
     plt.title(f'Background Photon Pt (barrel)',fontsize=20) #barrel only
 else :
     plt.title(f'Background Photon Pt (endcap)',fontsize=20) #endcap only
-plt.savefig(f'PFefficiency/' + modelname +'_'+ str(nn_cut) +f'/phoPt_{modelname}_bkgonly.png')
+plt.savefig(f'PFefficiency/' + sys.argv[1] +f'/phoPt_{sys.argv[1]}_bkgonly.png')
 plt.close()
-
-
-
-
-
-
-
 
 
 
 
 #################################################################################
 txt.close()
-print(f'\nAll done. Plots are saved in the folder plots\n')
+print(f'\nAll done. Plots are saved in the folder : PFefficiency/{sys.argv[1]}\n')
