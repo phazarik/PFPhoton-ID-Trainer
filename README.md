@@ -1,5 +1,5 @@
 # PF-Photon-ID-Trainer
-This is a collection of machine learning code that utilises tensorflow and trains/evaluates a sequential neural network with a goal to distinguish between real photons and fake photons.
+This is a collection of machine learning codes which utilises tensorflow and trains/evaluates a sequential neural network with a goal to distinguish between real photons and fake photons.
 
 #### The CSV files :
 The CSV files are stored in the directory ```../TrainingSamples```
