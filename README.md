@@ -7,7 +7,7 @@ Each row contains information about individual photons (like pT, eta, isPhotonMa
 These are flattened trees created from MINIAOD samples.
 The ntuplizer and the root-to-csv converter are stored in the folder : ```CSV_maker```
 #### Running the program :
-##### Weight Calculation :
+##### Weight Calculation : (only if you want pT weights. Otherwise skip)
 First calculate the weights associated with the photons in the different pT bins by running -
 ```
 [] python weight_calculator.py <barrel/endcap> 
