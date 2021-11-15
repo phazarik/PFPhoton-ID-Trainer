@@ -29,14 +29,11 @@ After the training is done. The following evaluation script should be run to fin
 This code will produce an ROC with different working points in a new folder ```evaluated/<modelname>```. You can decide the cut on the NN score in this step, and apply it while making the efficiency plots.
 
 ##### Efficiency calculation in pT bins:
-The following two codes calculates and plots the signal efficiency and background efficiency (fake rate) in different pT bins. The first one is for efficiencies of the NN at a specific cut, the second one is for efficiencies of the CMSSW flag. You can choose the value of the cut to be anything between 0 and 1, after looking at the evaluation ROC from the previous step.
+The following code calculates and plots the signal efficiency and background efficiency (fake rate) in different pT bins. One output plot is for the efficiencies of the NN at a specific cut, the second one is for efficiencies of the CMSSW flag. You can choose the value of the cut to be anything between 0 and 1, after looking at the evaluation ROC from the previous step.
 ```
 [] python PFPhoton-ID-Efficiency.py <modelname> <barrel/endcap> <nn_cut>
 ```
-```
-[] python PFPhoton-ID-Efficiency_PF.py <barrel/endcap>
-```
-These two lines will produce efficiency plots in two new folders : ```efficiency/<modelname>_<nn_cut>``` and ```PFefficiency/<barrel or endcap>```
+This line will produce efficiency plots in a new folder : ```efficiency/<modelname>_<nn_cut>```
 
 
 
