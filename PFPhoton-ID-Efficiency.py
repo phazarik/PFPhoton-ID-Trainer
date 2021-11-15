@@ -40,7 +40,7 @@ NN_cut = float(nn_cut)
 #Do you want normalised plot?
 isNorm = True
 #Do you want to debug?
-isDebug = True #True -> nrows=1000
+isDebug = False #True -> nrows=1000
 
 #Do you want barrel or endcap?
 if sys.argv[2] == 'barrel':
@@ -51,9 +51,9 @@ else:
     print('Please mention "barrel" or "endcap"')
 
 
-train_var = ['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'phohasPixelSeed','phoR9Full5x5','phohcalTower']
+train_var = ['phoHoverE', 'photrkSumPtHollow','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'phohasPixelSeed','phoR9Full5x5']
 #variables used in the training
-varnames = ['hadTowOverEm', 'trkSumPtHollowConeDR03', 'ecalRecHitSumEtConeDR03','sigmaIetaIeta','SigmaIEtaIEtaFull5x5','SigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'hasPixelSeed','R9Full5x5','hcalTowerSumEtConeDR03']
+varnames = ['hadTowOverEm', 'trkSumPtHollowConeDR03','sigmaIetaIeta','SigmaIEtaIEtaFull5x5','SigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'hasPixelSeed','R9Full5x5']
 #In the same order as they are fed into the training
 #removed : 'phoEcalPFClusterIso','phoHcalPFClusterIso',
 
@@ -65,49 +65,83 @@ print('Reading the input files')
 mycols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 if isDebug == True : #take only the first 1000 photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file2 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file4 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file5 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
 else : #take all the photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000000)
+    file2 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
+    file4 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
+    file5 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
 
 #########################################################
 #                  making dataframes                    #
 #########################################################
-print('creating the dataframe')
-file2["sample"]=1
-file4["sample"]=3
-file5["sample"]=4
-df=pd.concat([file2, file4, file5])
-df=df.sample(frac=1).reset_index(drop=True) #randomizing the rows 
-df=df.head(1500000)
+print('1. Defining Signal.')
+#signal1 = file1[(file1['isPhotonMatching'] == 1) and (file1['isPromptFinalState'] == 1) ]
+signal2 = file2[(file2['isPhotonMatching'] == 1) & (file2['isPromptFinalState'] == 1) ]
+#signal3 = file3[(file3['isPhotonMatching'] == 1) and (file3['isPromptFinalState'] == 1)]
+print('Done.')
 
-print('defining signal')
-sigdf = df[(df['isPhotonMatching'] == 1) & (df['isPromptFinalState'] == 1) ]
-sigdf['label']=1
+print('2. Defining Background.')
+#### Adding conditions to the background file :
+#background1 = file1[file1['isPhotonMatching'] == 0 ] 
+#background2 = file2[file2['isPhotonMatching'] == 0 ]
+#background3 = file3[file3['isPhotonMatching'] == 0 ]
+background4 = file4[(file4['isPhotonMatching'] == 0) | ((file4['isPhotonMatching'] == 1) & (file4['isPromptFinalState'] == 0)) ]
+background5 = file5[(file5['isPhotonMatching'] == 0) | ((file5['isPhotonMatching'] == 1) & (file5['isPromptFinalState'] == 0)) ]
+print('Done.')
 
-print('defining background')
-bkgdf = df[(df['isPhotonMatching'] == 0) | ((df['isPhotonMatching'] == 1) & (df['isPromptFinalState'] == 0)) ]
-bkgdf['label']=0
+#Adding labels and sample column to distinguish varius samples
 
-print('concatinating')
-data=pd.concat([sigdf, bkgdf])
-print(data.shape)
+#signal1["sample"]=0
+signal2["sample"]=1
+#signal3["sample"]=2
+#background1["sample"]=0
+#background2["sample"]=1
+#background3["sample"]=2
+background4["sample"]=3
+background5["sample"]=4
 
-#Barrel/Endcap selection :
+#signal1["label"]=1
+signal2["label"]=1
+#signal3["label"]=1
+#background1["label"]=0
+#background2["label"]=0
+#background3["label"]=0
+background4["label"]=0
+background5["label"]=0
+
+#Concatinating everything, and putting extra cuts:
+
+Sig_alldf = pd.concat([signal2])
+
 if isBarrel == True :
-    data = data[abs(data['phoEta']) < 1.442] #barrel only
+    Sig_alldf = Sig_alldf[abs(Sig_alldf['phoEta']) < 1.442] #barrel only
 else:
-    data = data[abs(data['phoEta']) > 1.566]
-    
-#splitting:
-data_train, data_test = train_test_split(data, test_size=0.5, stratify=data["label"])
-data=data_test #This makes sure that the testing samples are orthogonal
+    Sig_alldf = Sig_alldf[abs(Sig_alldf['phoEta']) > 1.566] #endcap only
+
+#Manually reducing signals :
+Sig_alldf=Sig_alldf.sample(frac=1).reset_index(drop=True) #randomizing the rows 
+#Sig_alldf=Sig_alldf.head(1000000) #Keeps only the first 1 million rows
+
+print('\nShape of the dataframes :')
+print(f'Signal : {Sig_alldf.shape}')
+
+Bkg_alldf = pd.concat([background4, background5])
+if isBarrel == True :
+    Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) < 1.442] #barrel only
+else :
+    Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) > 1.566] #endcap only
+
+print(f'Background : {Bkg_alldf.shape}')
+
+#Final data frame creaton :    
+data = pd.concat([Sig_alldf,Bkg_alldf])
+
+print('\nData reading succesful!')
 print('Dataframes are succesfully created.')
 
 ##########################################################
@@ -223,7 +257,7 @@ print(data.head)
 #        defining the Pt bins        #
 ######################################
 print('\nBinning for efficiency plot.')
-Pt_bins=[5, 10, 15, 20, 25, 30, 40, 60, 80, 100, 150, 200]
+Pt_bins=[10, 15, 20, 25, 30, 40, 60, 80, 100, 150, 200]
 print(f'Number of Pt bins = {len(Pt_bins)-1}')
 data['Pt_bin'] =  pd.cut(data['phoPt'], bins=Pt_bins, labels=list(range(len(Pt_bins)-1)))
 #This cuts the data into different bins of Pt with labels 0, 1 , 2 ... etc
@@ -241,6 +275,7 @@ while i<len(Pt_bins_err):
 #      efficiency calculations        # 
 #######################################
 
+'''
 def efficiency(label_, bintype_, binno_, nn_) :
     numerator = len(data.query(f'(label == {label_}) & ({bintype_} == {binno_}) & (NNscore > {nn_})'))
     denominator = len(data.query(f'(label == {label_}) & ({bintype_} == {binno_})'))
@@ -248,7 +283,7 @@ def efficiency(label_, bintype_, binno_, nn_) :
         print('Some bins have 0 entries, setting eff to zero')
         return 0, 0
     else :
-        eff = (numerator)/(denominator)
+        eff = (numerator*100)/(denominator)
         eff_err = 1/math.sqrt(denominator)
         return eff, eff_err
 
@@ -258,15 +293,27 @@ def efficiency_sample(sample_, label_, bintype_, binno_, nn_) :
     if denominator == 0 :
         return 0, 0
     else :
-        eff = (numerator)/(denominator)
+        eff = (numerator*100)/(denominator)
         eff_err = 1/math.sqrt(denominator)
         return eff, eff_err
 
+def efficiency_PF(sample_, label_, bintype_, binno_, boolPF_):
+    numerator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_}) & (isPFPhoton == {boolPF_})'))
+    denominator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_})'))
+    if denominator == 0 :
+        return 0, 0
+    else :
+        eff = (numerator*100)/(denominator)
+        eff_err = 1/math.sqrt(denominator)
+        return eff, eff_err
+'''
+
 #########################
-#  For all the samples  #
+#        Global         #
 #########################
 
 #calculatin of global efficiencies at NN_cut (irrespective of bins) :
+
 sig_eff_global=0
 bkg_eff_global=0
 
@@ -275,10 +322,11 @@ den_sig = len(data.query(f'(label == 1)'))
 num_bkg = len(data.query(f'(label == 0) & (NNscore > {NN_cut})'))
 den_bkg = len(data.query(f'(label == 0)'))
 if(den_sig > 0):
-    sig_eff_global = (num_sig)/den_sig
+    sig_eff_global = (num_sig*100)/den_sig
 if(den_bkg > 0):
-    bkg_eff_global = (num_bkg)/den_bkg
+    bkg_eff_global = (num_bkg*100)/den_bkg
 
+'''
 #In Pt Bins:
 sig_eff_list = []
 sig_eff_list_err =[]
@@ -300,11 +348,13 @@ txt.write('\nsignal_efficiencies :\n')
 txt.write(str(sig_eff_list))
 txt.write('\nBackground_efficiencies :\n')
 txt.write(str(bkg_eff_list))
+'''
 
 ###########################
 #  For different samples  #
 ###########################
 
+'''
 def global_efficiency_sample(sample_) :
     sig_eff_global1 = 0
     bkg_eff_global1 = 0
@@ -313,15 +363,18 @@ def global_efficiency_sample(sample_) :
     num_bkg1 = len(data.query(f'(sample == {sample_}) &(label == 0) & (NNscore > {NN_cut})'))
     den_bkg1 = len(data.query(f'(sample == {sample_}) &(label == 0)'))
     if(den_sig1 > 0):
-        sig_eff_global1 = (num_sig1)/den_sig1
+        sig_eff_global1 = (num_sig1)*100/den_sig1
     if(den_bkg1 > 0):
-        bkg_eff_global1 = (num_bkg1)/den_bkg1
+        bkg_eff_global1 = (num_bkg1)*100/den_bkg1
     return sig_eff_global1, bkg_eff_global1
 
 sig_eff_global_GJet, bkg_eff_global_GJet = global_efficiency_sample(1)
 sig_eff_global_QCD, bkg_eff_global_QCD = global_efficiency_sample(3)
 sig_eff_global_Tau, bkg_eff_global_Tau = global_efficiency_sample(4)
-
+'''
+###
+##################################################################################
+#MAIN
 #In Pt Bins :
 def efficiency_sample(sample_, label_, bintype_, binno_, nn_) :
     numerator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_}) & (NNscore > {nn_})'))
@@ -329,8 +382,9 @@ def efficiency_sample(sample_, label_, bintype_, binno_, nn_) :
     if denominator == 0 :
         return 0, 0
     else :
-        eff = (numerator)/(denominator)
-        eff_err = 1/math.sqrt(denominator)
+        eff = numerator/denominator
+        eff_err = math.sqrt(eff*(1-eff))/denominator
+        eff = eff*100
         return eff, eff_err
     
 def calculate_pt_eff_sample(sample_):
@@ -351,7 +405,40 @@ def calculate_pt_eff_sample(sample_):
 sig_eff_list_GJet, sig_eff_list_err_GJet, bkg_eff_list_GJet, bkg_eff_list_err_GJet = calculate_pt_eff_sample(1)
 sig_eff_list_QCD, sig_eff_list_err_QCD, bkg_eff_list_QCD, bkg_eff_list_err_QCD = calculate_pt_eff_sample(3)
 sig_eff_list_Tau, sig_eff_list_err_Tau, bkg_eff_list_Tau, bkg_eff_list_err_Tau = calculate_pt_eff_sample(4)
+########################################################################################################
+#Same Calculations for PF:
+#MAIN
+#In Pt Bins :
+def efficiency_sample_PF(sample_, label_, bintype_, binno_, boolPF_) :
+    numerator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_}) & (isPFPhoton == {boolPF_})'))
+    denominator = len(data.query(f'(sample == {sample_}) & (label == {label_}) & ({bintype_} == {binno_})'))
+    if denominator == 0 :
+        return 0, 0
+    else :
+        eff = numerator/denominator
+        eff_err = math.sqrt(eff*(1-eff))/denominator
+        eff = eff*100
+        return eff, eff_err
 
+def calculate_pt_eff_sample_PF(sample_):
+    sig_eff_list1 = []
+    sig_eff_list_err1 =[]
+    bkg_eff_list1 = []
+    bkg_eff_list_err1 = []
+    for iterator in range(len(Pt_bins)-1):
+        sig_eff1, sig_eff_err1 = efficiency_sample_PF(sample_, 1, 'Pt_bin', iterator, 1)
+        bkg_eff1, bkg_eff_err1 = efficiency_sample_PF(sample_, 0, 'Pt_bin', iterator, 1)
+        sig_eff_list1.append(sig_eff1)
+        bkg_eff_list1.append(bkg_eff1)
+        sig_eff_list_err1.append(sig_eff_err1)
+        bkg_eff_list_err1.append(bkg_eff_err1)
+
+    return sig_eff_list1, sig_eff_list_err1, bkg_eff_list1, bkg_eff_list_err1
+
+
+sig_eff_list_GJet_PF, sig_eff_list_err_GJet_PF, bkg_eff_list_GJet_PF, bkg_eff_list_err_GJet_PF = calculate_pt_eff_sample_PF(1)
+sig_eff_list_QCD_PF, sig_eff_list_err_QCD_PF, bkg_eff_list_QCD_PF, bkg_eff_list_err_QCD_PF = calculate_pt_eff_sample_PF(3)
+sig_eff_list_Tau_PF, sig_eff_list_err_Tau_PF, bkg_eff_list_Tau_PF, bkg_eff_list_err_Tau_PF = calculate_pt_eff_sample_PF(4)
 
 #########################################
 #               plotting                #
@@ -359,72 +446,48 @@ sig_eff_list_Tau, sig_eff_list_err_Tau, bkg_eff_list_Tau, bkg_eff_list_err_Tau =
 location = 'center right'
 bins_= np.arange(0, 151, 1)
 
-#Plot 1 : pT efficiency plot (Signal)
+sig_eff_PF = (  len(data.query(f'(label == 1) &(isPFPhoton == 1)')) )*100/(  len(data.query(f'(label == 1)')) )
+bkg_eff_PF = (  len(data.query(f'(label == 0) &(isPFPhoton == 1)')) )*100/(  len(data.query(f'(label == 0)')) )
+
+#Plot 1 : pT efficiency plot (NN)
 plt.figure(figsize=(8,8))
-plt.errorbar(Pt_bins_plot, sig_eff_list_GJet, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_GJet, fmt='.', color="xkcd:green",label="GJet", markersize='5')
-plt.errorbar(Pt_bins_plot, sig_eff_list_QCD, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_QCD, fmt='.', color="xkcd:denim",label="QCD", markersize='5')
-plt.errorbar(Pt_bins_plot, sig_eff_list_Tau, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_Tau, fmt='.', color="xkcd:red",label="TauGun", markersize='5')
-plt.legend(loc=location, title=f' NNcut = {NN_cut}\n Global signal eff ={sig_eff_global:.2f}')
+plt.errorbar(Pt_bins_plot, sig_eff_list_GJet, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_GJet, fmt='.', color="xkcd:green",label="Signal from GJet", markersize='5')
+plt.errorbar(Pt_bins_plot, bkg_eff_list_QCD, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_QCD, fmt='.', color="xkcd:denim",label="Background from QCD", markersize='5')
+plt.errorbar(Pt_bins_plot, bkg_eff_list_Tau, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_Tau, fmt='.', color="xkcd:red",label="Background from TauGun", markersize='5')
+#plt.errorbar(Pt_bins_plot, sig_eff_list_QCD, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_QCD, fmt='.', color="xkcd:denim",label="QCD", markersize='5')
+#plt.errorbar(Pt_bins_plot, sig_eff_list_Tau, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_Tau, fmt='.', color="xkcd:red",label="TauGun", markersize='5')
+plt.legend(loc=location, title=f' NN cut = {NN_cut}\n Global signal eff ={sig_eff_global:.2f}%\n Global bkg eff ={bkg_eff_global:.2f}%')
 if isBarrel == True :
-    plt.title('Signal Efficiencies in Pt bins (Barrel)', fontsize=20)
+    plt.title(f'Photon Efficiencies at NN cut = {NN_cut} (Barrel)', fontsize=15)
 else :
-    plt.title('Signal Efficiencies in Pt bins (Endcap)', fontsize=20)
+    plt.title(f'Photon Efficiencies at NN cut = {NN_cut} (Endcap)', fontsize=15)
 plt.xlabel('Pt bins',fontsize=20)
 plt.ylabel('Efficiency',fontsize=15)
-plt.ylim(-0.05,1.05)
+plt.ylim(-5,105)
 plt.xlim(0,200)
 plt.grid(axis="x")
-plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) + f'/sig_eff_Pt_bins_{modelname}.png')
+plt.grid(axis="y")
+plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) + f'/eff_Pt_bins_{modelname}.png')
 plt.close()
 
-#Plot 2 : pT efficiency plot (Background)
+#Plot 1 : pT efficiency plot (PF)
 plt.figure(figsize=(8,8))
-plt.errorbar(Pt_bins_plot, bkg_eff_list_GJet, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_GJet, fmt='.', color="xkcd:green",label="GJet", markersize='5')
-plt.errorbar(Pt_bins_plot, bkg_eff_list_QCD, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_QCD, fmt='.', color="xkcd:denim",label="QCD", markersize='5')
-plt.errorbar(Pt_bins_plot, bkg_eff_list_Tau, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_Tau, fmt='.', color="xkcd:red",label="TauGun", markersize='5')
-plt.legend(loc=location, title=f' NNcut = {NN_cut}\n Global bkg eff ={bkg_eff_global:.2f}')
+plt.errorbar(Pt_bins_plot, sig_eff_list_GJet_PF, xerr = Pt_bins_err/2, yerr=sig_eff_list_err_GJet_PF, fmt='.', color="xkcd:green",label="Signal from GJet", markersize='5')
+plt.errorbar(Pt_bins_plot, bkg_eff_list_QCD_PF, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_QCD_PF, fmt='.', color="xkcd:denim",label="Background from QCD", markersize='5')
+plt.errorbar(Pt_bins_plot, bkg_eff_list_Tau_PF, xerr = Pt_bins_err/2, yerr=bkg_eff_list_err_Tau_PF, fmt='.', color="xkcd:red",label="Background from TauGun", markersize='5')
+plt.legend(loc=location, title=f' CMSSW flag\n Global signal eff ={sig_eff_PF:.2f}%\n Global bkg eff ={bkg_eff_PF:.2f}%')
 if isBarrel == True :
-    plt.title('Background Efficiencies in Pt bins (Barrel)', fontsize=20)
+    plt.title('Photon Efficiencies for the CMSSW flag (Barrel)', fontsize=15)
 else :
-    plt.title('Background Efficiencies in Pt bins (Endcap)', fontsize=20)
+    plt.title('Photon Efficiencies for the CMSSW flag (Endcap)', fontsize=15)
 plt.xlabel('Pt bins',fontsize=20)
 plt.ylabel('Efficiency',fontsize=15)
-plt.ylim(-0.05,1.05)
+plt.ylim(-5,105)
 plt.xlim(0,200)
 plt.grid(axis="x")
-plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) + f'/bkg_eff_Pt_bins_{modelname}.png')
+plt.grid(axis="y")
+plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) + f'/eff_Pt_bins_PF_{modelname}.png')
 plt.close()
-
-#plot 3 : pT spectrum (signal):
-plt.figure(figsize=(8,6))
-plt.hist(data.query('(label == 1) & (sample ==3)')['phoPt'], bins=bins_, histtype='step', label="QCD", linewidth=2, color='xkcd:denim',density=isNorm,log=False)
-plt.hist(data.query('(label == 1) & (sample ==4)')['phoPt'], bins=bins_, histtype='step', label="TauGun", linewidth=2, color='xkcd:red',density=isNorm,log=False)
-plt.hist(data.query('(label == 1) & (sample ==1)')['phoPt'], bins=bins_, histtype='step', label="GJet", linewidth=2, color='xkcd:green',density=isNorm,log=False)
-plt.legend(loc='best')
-plt.xlabel('phoPt',fontsize=20)
-plt.ylabel('Entries',fontsize=15)
-if isBarrel == True :
-    plt.title(f'Signal Photon Pt (barrel)',fontsize=20) #barrel only
-else :
-    plt.title(f'Signal Photon Pt (endcap)',fontsize=20) #endcap only
-plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) +f'/phoPt_{modelname}_sigonly.png')
-plt.close()
-
-#plot 4 : pT spectrum (background):
-plt.figure(figsize=(8,6))
-plt.hist(data.query('(label == 0) & (sample ==3)')['phoPt'], bins=bins_, histtype='step', label="QCD", linewidth=2, color='xkcd:denim',density=isNorm,log=False)
-plt.hist(data.query('(label == 0) & (sample ==4)')['phoPt'], bins=bins_, histtype='step', label="TauGun", linewidth=2, color='xkcd:red',density=isNorm,log=False)
-plt.hist(data.query('(label == 0) & (sample ==1)')['phoPt'], bins=bins_, histtype='step', label="GJet", linewidth=2, color='xkcd:green',density=isNorm,log=False)
-plt.legend(loc='best')
-plt.xlabel('phoPt',fontsize=20)
-plt.ylabel('Entries',fontsize=15)
-if isBarrel == True :
-    plt.title(f'Background Photon Pt (barrel)',fontsize=20) #barrel only
-else :
-    plt.title(f'Background Photon Pt (endcap)',fontsize=20) #endcap only
-plt.savefig(f'efficiency/' + modelname +'_'+ str(nn_cut) +f'/phoPt_{modelname}_bkgonly.png')
-plt.close()
-
 
 
 #################################################################################

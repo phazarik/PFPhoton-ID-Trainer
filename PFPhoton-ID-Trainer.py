@@ -36,7 +36,7 @@ scaler =  open(f'models/' + modelname+ f'/scaler_{modelname}.txt', "w+")
 ##########################################################
 
 #Do you want to debug?
-isDebug = True #True -> nrows=1000
+isDebug = False #True -> nrows=1000
 
 #Do you want barrel or endcap?
 if sys.argv[2] == 'barrel':
@@ -46,11 +46,11 @@ elif sys.argv[2] == 'endcap':
 else:
     print('Please mention "barrel" or "endcap"')
 
-train_var = ['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'phohasPixelSeed','phoR9Full5x5','phohcalTower']
+train_var = ['phoHoverE', 'photrkSumPtHollow','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'phohasPixelSeed','phoR9Full5x5']
 #variables used in the training
-varnames = ['hadTowOverEm', 'trkSumPtHollowConeDR03', 'ecalRecHitSumEtConeDR03','sigmaIetaIeta','SigmaIEtaIEtaFull5x5','SigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'hasPixelSeed','R9Full5x5','hcalTowerSumEtConeDR03']
+varnames = ['hadTowOverEm', 'trkSumPtHollowConeDR03','sigmaIetaIeta','SigmaIEtaIEtaFull5x5','SigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'hasPixelSeed','R9Full5x5']
 #In the same order as they are fed into the training
-#removed : 'phoEcalPFClusterIso','phoHcalPFClusterIso',
+#removed : 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'ecalRecHitSumEtConeDR03', 'hcalTowerSumEtConeDR03'
 #new : phohadOverEmCone
 #old : phoHoverE
 batch_size_ = 1024
@@ -64,16 +64,16 @@ print('\nReading the input files.')
 mycols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 if isDebug == True : #take only the first 1000 photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file2 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file4 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file5 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
 else : #take all the photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000000)
+    file2 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
+    file4 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
+    file5 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
     
 #####################################
 #  Defining the Signal dataframes   #

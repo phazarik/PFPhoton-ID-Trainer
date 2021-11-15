@@ -35,7 +35,7 @@ txt = open(f'evaluated/' + modelname+ f'/info_{modelname}.txt', "w+")
 ##########################################################
 
 #Do you want to debug?
-isDebug = True #True -> nrows=1000
+isDebug = False #True -> nrows=1000
 #Do you want barrel or endcap?
 if sys.argv[2] == 'barrel':
     isBarrel = True #True -> Barrel, False -> Endcap
@@ -44,9 +44,9 @@ elif sys.argv[2] == 'endcap':
 else:
     print('Please mention "barrel" or "endcap"')
 
-train_var = ['phoHoverE', 'photrkSumPtHollow', 'phoecalRecHit','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'phohasPixelSeed','phoR9Full5x5','phohcalTower']
+train_var = ['phoHoverE', 'photrkSumPtHollow','phosigmaIetaIeta','phoSigmaIEtaIEtaFull5x5','phoSigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'phohasPixelSeed','phoR9Full5x5']
 #variables used in the training
-varnames = ['hadTowOverEm', 'trkSumPtHollowConeDR03', 'ecalRecHitSumEtConeDR03','sigmaIetaIeta','SigmaIEtaIEtaFull5x5','SigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'hasPixelSeed','R9Full5x5','hcalTowerSumEtConeDR03']
+varnames = ['hadTowOverEm', 'trkSumPtHollowConeDR03','sigmaIetaIeta','SigmaIEtaIEtaFull5x5','SigmaIEtaIPhiFull5x5', 'phoEcalPFClusterIso','phoHcalPFClusterIso', 'hasPixelSeed','R9Full5x5']
 #In the same order as they are fed into the training
 #removed : 'phoEcalPFClusterIso','phoHcalPFClusterIso',
 
@@ -59,16 +59,16 @@ print('\nReading the input files.')
 mycols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 if isDebug == True : #take only the first 1000 photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file2 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file4 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
+    file5 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=1000)
 else : #take all the photons
     #file1 = pd.read_csv('../TrainingSamples/df_GJet_20to40_20.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
-    file2 = pd.read_csv('../TrainingSamples/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000000)
+    file2 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_GJet.csv.gzip',compression='gzip', usecols=mycols, nrows=1000000)
     #file3 = pd.read_csv('../TrainingSamples/df_GJet_40toInf_20.csv.gzip',compression='gzip', usecols=mycols, nrows=10000)
-    file4 = pd.read_csv('../TrainingSamples/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
-    file5 = pd.read_csv('../TrainingSamples/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
+    file4 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_QCD.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
+    file5 = pd.read_csv('../TrainingSamples/Run3Summer21-v2/df_TauGun.csv.gzip',compression='gzip', usecols=mycols, nrows=250000)
     
 ##################################################################################################################################################################
 #  Defining the Signal dataframes   #
@@ -78,8 +78,8 @@ print('Defining Signal.')
 #signal1 = file1[file1['isPhotonMatching'] ==1 ]
 signal2 = file2[(file2['isPhotonMatching'] == 1) & (file2['isPromptFinalState'] == 1) ]
 #signal3 = file3[file3['isPhotonMatching'] ==1 ]
-signal4 = file4[(file4['isPhotonMatching'] == 1) & (file4['isPromptFinalState'] == 1) ]
-signal5 = file5[(file5['isPhotonMatching'] == 1) & (file5['isPromptFinalState'] == 1) ]
+#signal4 = file4[(file4['isPhotonMatching'] == 1) & (file4['isPromptFinalState'] == 1) ]
+#signal5 = file5[(file5['isPhotonMatching'] == 1) & (file5['isPromptFinalState'] == 1) ]
 
 #######################################
 # Defining the Background data-frames #
@@ -88,7 +88,7 @@ signal5 = file5[(file5['isPhotonMatching'] == 1) & (file5['isPromptFinalState'] 
 print('Defining Background.')
 #### Adding conditions to the background file :
 #background1 = file1[file1['isPhotonMatching'] ==0 ] 
-background2 = file2[(file4['isPhotonMatching'] == 0) | ((file2['isPhotonMatching'] == 1) & (file2['isPromptFinalState'] == 0)) ]
+#background2 = file2[(file4['isPhotonMatching'] == 0) | ((file2['isPhotonMatching'] == 1) & (file2['isPromptFinalState'] == 0)) ]
 #background3 = file3[file3['isPhotonMatching'] ==0 ]
 background4 = file4[(file4['isPhotonMatching'] == 0) | ((file4['isPhotonMatching'] == 1) & (file4['isPromptFinalState'] == 0)) ]
 background5 = file5[(file5['isPhotonMatching'] == 0) | ((file5['isPhotonMatching'] == 1) & (file5['isPromptFinalState'] == 0)) ]
@@ -100,10 +100,10 @@ background5 = file5[(file5['isPhotonMatching'] == 0) | ((file5['isPhotonMatching
 #signal1["sample"]=0
 signal2["sample"]=1
 #signal3["sample"]=2
-signal4["sample"]=3
-signal5["sample"]=4
+#signal4["sample"]=3
+#signal5["sample"]=4
 #background1["sample"]=0
-background2["sample"]=1
+#background2["sample"]=1
 #background3["sample"]=2
 background4["sample"]=3
 background5["sample"]=4
@@ -111,10 +111,10 @@ background5["sample"]=4
 #signal1["label"]=1
 signal2["label"]=1
 #signal3["label"]=1
-signal4["label"]=1
-signal5["label"]=1
+#signal4["label"]=1
+#signal5["label"]=1
 #background1["label"]=0
-background2["label"]=0
+#background2["label"]=0
 #background3["label"]=0
 background4["label"]=0
 background5["label"]=0
@@ -122,7 +122,7 @@ background5["label"]=0
 ################################################################
 #Concatinating everything, and putting extra cuts:
 
-Sig_alldf = pd.concat([signal2, signal4, signal5])
+Sig_alldf = pd.concat([signal2])
 if isBarrel == True :
     Sig_alldf = Sig_alldf[abs(Sig_alldf['phoEta']) < 1.442] #barrel only
 else:
@@ -132,7 +132,7 @@ else:
 Sig_alldf=Sig_alldf.sample(frac=1).reset_index(drop=True) #randomizing the rows 
 Sig_alldf=Sig_alldf.head(1000000) #Keeps only the first 1 million rows
 
-Bkg_alldf = pd.concat([background2, background4, background5])
+Bkg_alldf = pd.concat([background4, background5])
 if isBarrel == True :
     Bkg_alldf = Bkg_alldf[abs(Bkg_alldf['phoEta']) < 1.442] #barrel only
 else :
@@ -384,6 +384,20 @@ if Optimum_Cut > 0.92:
     
 tpr1, fnr1, tpr2, fnr2 = find_nearby(Optimum_Cut, err)
 
+##########################
+#Checking a manual cut
+if isBarrel == True:
+    manual_cut = 0.42
+else:
+    manual_cut = 0.78
+
+sig_num_m=len(data.query(f' (label==1) & (NNScore > {manual_cut})')) 
+sig_den_m=len(data.query(f' (label==1)'))
+tpr3=(sig_num_m*100)/sig_den_m
+
+bkg_num_m=len(data.query(f' (label==0) & (NNScore < {manual_cut})'))
+bkg_den_m=len(data.query(f' (label==0)'))
+fnr3=(bkg_num_m*100)/bkg_den_m
     
 ########################################################
 #                      Plotting                        #
@@ -404,6 +418,7 @@ plt.ylim(0,100)
 plt.plot(tpr1, fnr1, marker=(5, 1, 0),  color="blue", markersize=8, label=f'NN cut at {(Optimum_Cut+err):.2f} ({tpr1:.0f},{fnr1:.0f})')
 plt.plot(tpr_NN, fnr_NN, marker=(5, 1, 0), color="red", markersize=8, label=f'NN cut at {Optimum_Cut:.2f} ({tpr_NN:.0f},{fnr_NN:.0f})')
 plt.plot(tpr2, fnr2, marker=(5, 1, 0), color="black", markersize=8, label=f'NN cut at {(Optimum_Cut-err):.2f} ({tpr2:.0f},{fnr2:.0f})')
+#plt.plot(tpr3, fnr3, marker=(5, 1, 0), color="green", markersize=8, label=f'Old wp (NN cut at{manual_cut:.2f}) ({tpr3:.0f},{fnr3:.0f})')
 #marker=(5, 1, 0),
 
 plt.legend(loc='lower right')
